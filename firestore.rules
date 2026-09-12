@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owner(mid) {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/memberAccess/$(request.auth.uid))
+        && get(/databases/$(database)/documents/memberAccess/$(request.auth.uid)).data.memberId == mid;
+    }
+    function hours(h) {
+      return h is list && h.size() <= 13 && h.toSet().size() == h.size()
+        && h.hasOnly([8,9,10,11,12,13,14,15,16,17,18,19,20]);
+    }
+    function week(w) {
+      return w is map && w.keys().hasAll(['0','1','2','3','4','5','6'])
+        && w.keys().hasOnly(['0','1','2','3','4','5','6'])
+        && hours(w['0']) && hours(w['1']) && hours(w['2']) && hours(w['3'])
+        && hours(w['4']) && hours(w['5']) && hours(w['6']);
+    }
+    match /members/{mid} { allow read: if true; }
+    match /scheduleDefaults/{mid} { allow read: if true; }
+    match /memberAccess/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+    }
+    match /availability/{mid} {
+      allow read: if true;
+      function valid() {
+        return request.resource.data.keys().hasOnly(['week','version','updatedAt'])
+          && week(request.resource.data.week)
+          && request.resource.data.version is int
+          && request.resource.data.updatedAt == request.time;
+      }
+      allow create: if owner(mid) && valid() && request.resource.data.version == 1;
+      allow update: if owner(mid) && valid() && request.resource.data.version == resource.data.version + 1;
+    }
+    match /overrides/{id} {
+      allow read: if true;
+      allow create: if owner(request.resource.data.member)
+        && request.resource.data.keys().hasOnly(['member','startAt','endAt','type','note','createdAt'])
+        && request.resource.data.startAt is timestamp && request.resource.data.endAt is timestamp
+        && request.resource.data.startAt < request.resource.data.endAt
+        && request.resource.data.type in ['on','off']
+        && request.resource.data.note is string && request.resource.data.note.size() <= 15
+        && request.resource.data.createdAt == request.time;
+      allow delete: if owner(resource.data.member);
+    }
+  }
+}

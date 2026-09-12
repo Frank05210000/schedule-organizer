@@ -1,0 +1,12 @@
+node_modules/
+.firebase/
+*-debug.log*
+.env*
+!.env.example
+secrets/
+public/firebase-config.json
+public/firebase-app.js
+artifacts/
+public/vendor/
+firepit-log.txt
+.DS_Store

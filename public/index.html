@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>團隊出席排程</title>
+<script src="./firebase-app.js"></script>
+<script>window.__resources = {
+"https://unpkg.com/react@18.3.1/umd/react.production.min.js": "/vendor/react.js",
+"https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js": "/vendor/react-dom.js",
+"https://unpkg.com/@babel/standalone@7.29.0/babel.min.js": "/vendor/babel.js"
+};</script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/classical-9958854e-5bc3-4ffa-812e-c3792b3c2c41/styles.css">
+<script src="_ds/classical-9958854e-5bc3-4ffa-812e-c3792b3c2c41/_ds_bundle.js"></script>
+<style>
+body { margin: 0; -webkit-text-size-adjust: 100%; }
+@keyframes slideIn { from { transform: translateY(16px); opacity: 0 } to { transform: none; opacity: 1 } }
+@keyframes todayBreathe { 0%, 100% { opacity: .7 } 50% { opacity: 1 } }
+</style>
+</helmet>
+<div style="min-height:100vh;background:var(--color-bg);color:var(--color-text);padding-bottom:64px">
+
+  <div class="nav" style="position:sticky;top:0;z-index:20;background:var(--color-bg);flex-wrap:wrap;gap:var(--space-2)">
+    <div class="nav-brand" style="margin-right:auto;display:flex;align-items:baseline;gap:10px">
+      {{ T.brand }}
+      <span style="font-family:var(--font-body);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-accent)">{{ brandSub }}</span>
+    </div>
+    <button class="btn btn-ghost" style="font-size:12px;letter-spacing:.06em;padding:6px 11px" onClick="{{ toggleLang }}" aria-label="Language">{{ langBtn }}</button>
+    <button class="btn btn-secondary" disabled="{{ dataUnavailable }}" onClick="{{ openMatrix }}">{{ T.matrixBtn }}</button>
+    <button class="btn btn-primary" onClick="{{ openDrawer }}">{{ T.studentBtn }}</button>
+  </div>
+
+  <sc-if value="{{ showSyncNotice }}" hint-placeholder-val="{{ false }}">
+    <div role="status" aria-live="polite" style="position:fixed;bottom:12px;left:12px;right:12px;z-index:60;padding:10px 14px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-md)">{{ syncStatus }}</div>
+  </sc-if>
+  <main style="max-width:1120px;margin:0 auto;padding:var(--space-6) var(--space-4) 0">
+
+    <section style="margin-bottom:var(--space-6)">
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--space-4);justify-content:space-between">
+        <div>
+        </div>
+      </div>
+    </section>
+
+    <section style="display:flex;flex-wrap:wrap;gap:var(--space-4) var(--space-6);align-items:center;padding:var(--space-3) 0;border-top:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);margin-bottom:var(--space-6)">
+      <div style="display:flex;align-items:center;gap:10px;position:relative;flex-wrap:wrap">
+        <span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600);white-space:nowrap">{{ T.weekLabel }}</span>
+        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+          <button class="btn btn-ghost" style="padding:6px 11px" onClick="{{ weekPrev }}" aria-label="{{ T.prevWeek }}">←</button>
+          <button class="btn btn-secondary" style="min-width:180px;font-feature-settings:'tnum'" onClick="{{ togglePicker }}">{{ weekBtnLabel }}</button>
+          <button class="btn btn-ghost" style="padding:6px 11px" onClick="{{ weekNext }}" aria-label="{{ T.nextWeek }}">→</button>
+        </div>
+        <button class="btn btn-ghost" style="font-size:12px;padding:6px 11px;white-space:nowrap;flex-shrink:0" onClick="{{ backToThisWeek }}">{{ T.todayBtn }}</button>
+        <sc-if value="{{ pickerOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;top:calc(100% + 8px);left:44px;z-index:45;width:288px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);padding:var(--space-3);animation:slideIn .15s ease-out">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-2)">
+              <button class="btn btn-ghost" style="padding:4px 9px" onClick="{{ monthPrev }}" aria-label="{{ T.prevMonth }}">←</button>
+              <span style="font-family:var(--font-heading);font-size:17px;font-feature-settings:'tnum'">{{ pickerTitle }}</span>
+              <button class="btn btn-ghost" style="padding:4px 9px" onClick="{{ monthNext }}" aria-label="{{ T.nextMonth }}">→</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px">
+              <sc-for list="{{ pickerDows }}" as="d" hint-placeholder-count="7">
+                <div style="text-align:center;font-size:11px;color:var(--color-neutral-600)">{{ d }}</div>
+              </sc-for>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <sc-for list="{{ pickerRows }}" as="r" hint-placeholder-count="6">
+                <button style="{{ r.style }}" onClick="{{ r.pick }}">
+                  <sc-for list="{{ r.days }}" as="c" hint-placeholder-count="7">
+                    <span style="{{ c.style }}">{{ c.label }}</span>
+                  </sc-for>
+                </button>
+              </sc-for>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-2);border-top:1px solid var(--color-divider);padding-top:var(--space-2)">
+              <span class="text-muted" style="font-size:12px">{{ T.pickRowHint }}</span>
+              <button class="btn btn-ghost" style="font-size:12px;padding:4px 9px" onClick="{{ backToThisWeek }}">{{ T.backToThisWeek }}</button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">{{ T.groupLabel }}</span>
+        <div style="display:flex;align-items:center;gap:16px">
+          <label style="display:inline-flex;align-items:center;gap:7px;font-size:13px;cursor:pointer"><input type="checkbox" checked="{{ gpIsA }}" onChange="{{ toggleGpA }}" style="width:15px;height:15px;accent-color:var(--color-accent-700);cursor:pointer"/>{{ T.groupA }}</label>
+          <label style="display:inline-flex;align-items:center;gap:7px;font-size:13px;cursor:pointer"><input type="checkbox" checked="{{ gpIsB }}" onChange="{{ toggleGpB }}" style="width:15px;height:15px;accent-color:var(--color-accent-700);cursor:pointer"/>{{ T.groupB }}</label>
+        </div>
+      </div>
+    </section>
+
+    <sc-if value="{{ noScope }}" hint-placeholder-val="{{ false }}">
+      <p class="text-muted" style="font-size:14px;padding:var(--space-8) 0;border:1px dashed var(--color-divider);border-radius:var(--radius-md);text-align:center">{{ T.noGroup }}</p>
+    </sc-if>
+    <sc-if value="{{ hasScope }}" hint-placeholder-val="{{ true }}">
+    <section>
+      <div style="display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:baseline;justify-content:space-between;margin-bottom:var(--space-4)">
+        <h2 style="font-weight:400;font-size:26px;margin:0">{{ T.overviewTitle }}</h2>
+        <div style="display:flex;gap:var(--space-4);font-size:12px;color:var(--color-neutral-700);flex-wrap:wrap">
+          <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:14px;height:14px;background:var(--color-accent-300);border:1px solid var(--color-accent-700);border-radius:2px;display:block"></i>{{ T.legendAll }}</span>
+          <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:14px;height:14px;background:var(--color-accent-100);border:1px solid var(--color-accent-400);border-radius:2px;display:block"></i>{{ T.legendOk }}</span>
+          <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:14px;height:14px;border:1px dashed var(--color-divider);border-radius:2px;display:block"></i>{{ T.legendNo }}</span>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px">
+        <div style="min-width:580px;display:flex;flex-direction:column;gap:3px;position:relative">
+          <sc-if value="{{ todayInWeek }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ todayBandStyle }}"></div>
+          </sc-if>
+          <div style="display:flex;gap:3px;position:relative;z-index:1">
+            <div style="width:54px;flex:none"></div>
+            <sc-for list="{{ days }}" as="d" hint-placeholder-count="7">
+              <div style="{{ d.headStyle }}">
+                <div style="font-family:var(--font-heading);font-size:15px">{{ d.dow }}</div>
+                <div style="font-size:11px;font-feature-settings:'tnum';color:var(--color-neutral-600)">{{ d.md }}</div>
+                <sc-if value="{{ d.today }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:10px;letter-spacing:.06em;color:var(--color-neutral-900)">{{ d.todayTag }}</div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <sc-for list="{{ rows }}" as="row" hint-placeholder-count="13">
+            <div style="display:flex;gap:3px;align-items:stretch;position:relative;z-index:1">
+              <div style="width:54px;flex:none;font-size:11px;font-feature-settings:'tnum';color:var(--color-neutral-600);display:flex;align-items:center;justify-content:flex-end;padding-right:8px">{{ row.label }}</div>
+              <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="7">
+                <button style="{{ c.style }}" onMouseEnter="{{ c.hover }}" onClick="{{ c.pick }}" onFocus="{{ c.hover }}">{{ c.text }}</button>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="margin-top:var(--space-4);min-height:78px;border:1px solid var(--color-divider);border-radius:var(--radius-md);padding:var(--space-3)">
+        <div style="font-family:var(--font-heading);font-size:17px;margin-bottom:4px">{{ detailTitle }}</div>
+        <div style="font-size:13px;color:var(--color-accent-700)">{{ detailYes }}</div>
+        <div style="font-size:13px;color:var(--color-neutral-700);margin-top:2px">{{ detailNo }}</div>
+      </div>
+
+    </section>
+    </sc-if>
+  </main>
+
+  <sc-if value="{{ drawerOpen }}" hint-placeholder-val="{{ false }}">
+    <div class="dialog-backdrop" style="align-items:flex-end;padding:0;z-index:50" onClick="{{ closeDrawer }}">
+      <div style="{{ drawerStyle }}" onClick="{{ stop }}">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:var(--space-3)">
+          <h3 style="margin:0;font-weight:400">{{ T.studentBtn }}</h3>
+          <button class="btn btn-ghost" onClick="{{ closeDrawer }}">{{ T.close }}</button>
+        </div>
+        <p role="status" aria-live="polite" style="font-size:13px;margin:0 0 12px">{{ syncStatus }}</p>
+        <div class="field" style="margin-bottom:var(--space-3)">
+          <label>{{ T.iAm }}</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <sc-for list="{{ memberChips }}" as="m" hint-placeholder-count="7">
+              <button style="{{ m.style }}" disabled="{{ busy }}" onClick="{{ m.pick }}">{{ m.name }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <sc-if value="{{ needPin }}" hint-placeholder-val="{{ true }}">
+          <div class="field" style="margin-bottom:var(--space-3);border-top:1px solid var(--color-divider);padding-top:var(--space-3)">
+            <label>{{ T.pinLabel }}</label>
+            <div style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
+              <input class="input" style="max-width:240px;letter-spacing:.1em;font-feature-settings:'tnum'" type="password" autoComplete="current-password" maxLength="128" placeholder="••••" value="{{ pinInput }}" onChange="{{ setPin }}"/>
+              <button class="btn btn-primary" disabled="{{ authDisabled }}" onClick="{{ unlock }}">{{ T.unlock }}</button>
+              <span class="text-muted" style="font-size:12px">{{ pinHint }}</span>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ unlocked }}" hint-placeholder-val="{{ false }}">
+<button class="btn btn-ghost" disabled="{{ busy }}" onClick="{{ logout }}">{{ logoutLabel }}</button>
+        <div class="seg" style="margin:var(--space-2) 0 var(--space-4)">
+          <label class="seg-opt"><input type="radio" name="tab" checked="{{ tabIsTemp }}" onChange="{{ setTabTemp }}"/>{{ T.tabTemp }}</label>
+          <label class="seg-opt"><input type="radio" name="tab" checked="{{ tabIsReg }}" onChange="{{ setTabReg }}"/>{{ T.tabReg }}</label>
+        </div>
+        </sc-if>
+        <fieldset disabled="{{ editDisabled }}" style="border:0;padding:0;margin:0;min-width:0">
+<sc-if value="{{ tabTemp }}" hint-placeholder-val="{{ false }}">
+        <div class="field" style="margin-bottom:var(--space-3)">
+          <label>{{ T.typeLabel }}</label>
+          <div class="seg">
+            <label class="seg-opt"><input type="radio" name="ty" checked="{{ typeIsOff }}" onChange="{{ setTypeOff }}"/>{{ T.typeOff }}</label>
+            <label class="seg-opt"><input type="radio" name="ty" checked="{{ typeIsOn }}" onChange="{{ setTypeOn }}"/>{{ T.typeOn }}</label>
+          </div>
+        </div>
+        <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-bottom:var(--space-2)">
+          <div class="field" style="flex:1;min-width:210px">
+            <label>{{ T.startLabel }}</label>
+            <input class="input" type="datetime-local" step="1800" style="font-feature-settings:'tnum'" value="{{ formStartAt }}" onChange="{{ setFormStartAt }}"/>
+          </div>
+          <div class="field" style="flex:1;min-width:210px">
+            <label>{{ T.endLabel }}</label>
+            <input class="input" type="datetime-local" step="1800" style="font-feature-settings:'tnum'" value="{{ formEndAt }}" onChange="{{ setFormEndAt }}"/>
+          </div>
+        </div>
+        <p class="text-muted" style="font-size:12px;margin:0 0 var(--space-3);font-feature-settings:'tnum'">{{ rangeSummary }}</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:var(--space-3)">
+          <sc-for list="{{ quickRanges }}" as="q" hint-placeholder-count="3">
+            <button class="btn btn-secondary" style="font-size:12px;padding:5px 10px" onClick="{{ q.pick }}">{{ q.label }}</button>
+          </sc-for>
+        </div>
+        <div class="field" style="margin-bottom:var(--space-4)">
+          <label>{{ T.noteLabel }}</label>
+          <input class="input" maxLength="15" placeholder="{{ T.notePlaceholder }}" value="{{ formNote }}" onChange="{{ setFormNote }}"/>
+        </div>
+        <button class="btn btn-primary btn-block" onClick="{{ submitOverride }}">{{ T.submit }}</button>
+        <sc-if value="{{ hasMyOverrides }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:var(--space-4);border-top:1px solid var(--color-divider);padding-top:var(--space-3)">
+            <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:var(--space-2)">{{ T.myChanges }}</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <sc-for list="{{ myOverrides }}" as="o" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+                  <span style="font-feature-settings:'tnum'">{{ o.label }}</span>
+                  <span class="text-muted" style="flex:1;min-width:0">{{ o.note }}</span>
+                  <button class="btn btn-ghost" style="font-size:12px" onClick="{{ o.remove }}">{{ T.revoke }}</button>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+        </sc-if>
+        <sc-if value="{{ tabReg }}" hint-placeholder-val="{{ false }}">
+          <p class="text-muted" style="font-size:12px;margin:0 0 var(--space-3)">{{ T.regHint }}</p>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <div style="display:flex;gap:3px">
+              <div style="width:46px;flex:none"></div>
+              <sc-for list="{{ regDays }}" as="d" hint-placeholder-count="7">
+                <div style="{{ d.style }}">{{ d.label }}</div>
+              </sc-for>
+            </div>
+            <sc-for list="{{ regRows }}" as="r" hint-placeholder-count="13">
+              <div style="display:flex;gap:3px">
+                <div style="width:46px;flex:none;font-size:11px;font-feature-settings:'tnum';color:var(--color-neutral-600);display:flex;align-items:center;justify-content:flex-end;padding-right:6px">{{ r.label }}</div>
+                <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7">
+                  <button style="{{ c.style }}" onClick="{{ c.toggle }}"></button>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:var(--space-2);margin-top:var(--space-3);flex-wrap:wrap">
+            <button class="btn btn-secondary" style="font-size:12px;padding:5px 10px" onClick="{{ regClear }}">{{ T.clearAll }}</button>
+            <button class="btn btn-secondary" style="font-size:12px;padding:5px 10px" onClick="{{ regReset }}">{{ T.resetDefault }}</button>
+          </div>
+        </sc-if>
+        </fieldset>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ matrixOpen }}" hint-placeholder-val="{{ false }}">
+    <div class="dialog-backdrop" style="padding:var(--space-3);z-index:50" onClick="{{ closeMatrix }}">
+      <div style="{{ matrixStyle }}" onClick="{{ stop }}">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap">
+          <h3 style="margin:0;font-weight:400">{{ T.matrixTitle }}</h3>
+          <button class="btn btn-ghost" onClick="{{ closeMatrix }}">{{ T.close }}</button>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin:var(--space-3) 0">
+          <sc-for list="{{ dayTabs }}" as="t" hint-placeholder-count="7">
+            <button style="{{ t.style }}" onClick="{{ t.pick }}">{{ t.label }}</button>
+          </sc-for>
+        </div>
+        <div style="overflow:auto;flex:1;min-height:0">
+          <table class="table" style="min-width:520px">
+            <thead>
+              <tr>
+                <th style="position:sticky;left:0;background:var(--color-surface)">{{ T.slotCol }}</th>
+                <sc-for list="{{ matrixMembers }}" as="m" hint-placeholder-count="7">
+                  <th style="text-align:center">{{ m.name }}</th>
+                </sc-for>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ matrixRows }}" as="r" hint-placeholder-count="13">
+                <tr>
+                  <td style="font-feature-settings:'tnum';font-size:12px;white-space:nowrap;position:sticky;left:0;background:var(--color-surface)">{{ r.label }}</td>
+                  <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7">
+                    <td style="{{ c.style }}" title="{{ c.title }}">{{ c.mark }}</td>
+                  </sc-for>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-muted" style="font-size:12px;margin:var(--space-3) 0 0">〇 {{ T.mAvail }}　✕ {{ T.mBusy }}　<span style="color:var(--color-accent-700)">！</span> {{ T.mLeave }}　<span style="color:var(--color-accent-700)">＋</span> {{ T.mOpen }}</p>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ picksAny }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;left:0;right:0;bottom:0;z-index:55;display:flex;justify-content:center;padding:var(--space-3);pointer-events:none">
+      <div style="pointer-events:auto;display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-4);background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);padding:10px var(--space-4);animation:slideIn .18s ease-out;max-width:min(960px,100%)">
+        <div style="display:flex;flex-direction:column;min-width:0;gap:2px">
+          <span style="font-family:var(--font-heading);font-size:15px;font-feature-settings:'tnum'">{{ pickSummary }}</span>
+          <span style="font-size:12px;color:var(--color-neutral-600);font-feature-settings:'tnum'">{{ pickDetail }}</span>
+        </div>
+        <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-left:auto">
+          <button class="btn btn-primary" onClick="{{ addToGcal }}">{{ T.gcal }}</button>
+          <button class="btn btn-secondary" onClick="{{ copyPickInvite }}">{{ T.copyInvite }}</button>
+          <button class="btn btn-ghost" onClick="{{ clearPicks }}">{{ T.clear }}</button>
+        </div>
+      </div>
+    </div>
+    <div style="height:96px"></div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;background:var(--color-neutral-900);color:var(--color-neutral-100);padding:10px 18px;border-radius:var(--radius-md);font-size:14px;box-shadow:var(--shadow-lg);animation:slideIn .18s ease-out">{{ toast }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showWeekend&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;時段範圍&quot;},&quot;dayStart&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:8,&quot;min&quot;:6,&quot;max&quot;:14,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;時段範圍&quot;},&quot;dayEnd&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:21,&quot;min&quot;:16,&quot;max&quot;:24,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;時段範圍&quot;}}">
+const Date = window.TaipeiDate;
+class Component extends DCLogic {
+  members = [
+    { id: 'ta', name: '魏提安', en: 'Wei Ti-an', group: 'A' },
+    { id: 'fe', name: '徐法恩', en: 'Hsu Fa-en', group: 'A' },
+    { id: 'jy', name: '陳俊佑', en: 'Chen Chun-yu', group: 'A' },
+    { id: 'yl', name: '鄞永力', en: 'Yin Yung-li', group: 'A' },
+    { id: 'sx', name: '陳書璿', en: 'Chen Shu-hsuan', group: 'B' },
+    { id: 'yx', name: '鄭源勳', en: 'Cheng Yuan-hsun', group: 'B' },
+    { id: 'dx', name: '郭東旭', en: 'Kuo Tung-hsu', group: 'B' }
+  ];
+  reg = {
+    fe: { 1: [[11, 13], [16, 21]], 2: [[12, 21]], 3: [[12, 15], [18, 21]], 4: [[12, 21]], 5: [[12, 21]] },
+    jy: { 1: [[10, 13], [18, 21]], 2: [[12, 13], [15, 21]], 3: [[12, 15], [18, 21]], 4: [[12, 21]], 5: [[10, 13], [15, 21]] },
+    ta: { 1: [[12, 13], [15, 16], [18, 21]], 2: [[12, 13], [15, 21]], 3: [[12, 15], [18, 21]], 4: [[12, 21]], 5: [[12, 21]] },
+    yl: { 1: [[12, 13], [15, 21]], 2: [[12, 13], [14, 21]], 3: [[12, 14], [18, 21]], 4: [[12, 13], [15, 21]], 5: [[10, 21]] },
+    sx: { 3: [[18, 21]], 4: [[18, 21]], 5: [[12, 18], [19, 21]] },
+    dx: { 1: [[18, 21]], 2: [[16, 21]], 3: [[19, 21]], 4: [[18, 21]], 5: [[17, 21]] },
+    yx: { 1: [[10, 14]], 2: [[10, 14], [19, 21]], 3: [[19, 21]], 4: [[10, 12]], 5: [[13, 17]] }
+  };
+  LKEY = 'meetslot-lang-v1';
+
+  DICT = {
+    zh: {
+      brand: '115-大三專題-開會時間調查',
+      inSync: (n) => n + ' 人共同空檔',
+      matrixBtn: 'Raw Data', studentBtn: '學生專區', close: '關閉',
+      weekLabel: '週次', prevWeek: '上一週', nextWeek: '下一週',
+      prevMonth: '上個月', nextMonth: '下個月',
+      pickRowHint: '點任一列選擇該週', backToThisWeek: '回到本週', today: '今天', todayBtn: '回到今天',
+      groupLabel: '組別', groupA: 'A 組', groupB: 'B 組', noGroup: '請勾選至少一個組別以查看時段',
+      recTitle: '推薦開會時段', overviewTitle: '每週時段總覽',
+      legendAll: '全員皆可', legendOk: '達門檻', legendNo: '未達門檻',
+      gcal: '加入 Google 日曆', copyInvite: '複製邀請文案', clear: '清除',
+      noBlocks: '無符合門檻的時段',
+      iAm: '我是', pinLabel: '輸入個人密碼', unlock: '解鎖',
+      tabTemp: '臨時異動', tabReg: '常規空檔',
+      typeLabel: '異動類型', typeOff: '臨時不行／請假', typeOn: '臨時有空',
+      startLabel: '開始（日期 + 時間）', endLabel: '結束（日期 + 時間）',
+      noteLabel: '事由備註（15 字內，選填）', notePlaceholder: '例：論文口試衝堂',
+      submit: '送出，立即更新', myChanges: '已登記的異動', revoke: '撤銷',
+      regHint: '點格子切換這學期的常態空檔，金色代表有空，改完立即生效。',
+      clearAll: '全部清空', resetDefault: '回到預設',
+      matrixTitle: '成員狀態明細', slotCol: '時段',
+      mAvail: '可出席', mBusy: '常態沒空', mLeave: '臨時請假（滑過看事由）', mOpen: '臨時釋出',
+      dows: ['週日', '週一', '週二', '週三', '週四', '週五', '週六'],
+      dowsShort: ['日', '一', '二', '三', '四', '五', '六'],
+      pickerDows: ['一', '二', '三', '四', '五', '六', '日'],
+      sep: '、',
+      weekName: (o) => o === 0 ? '本週' : o === 1 ? '下週' : o === -1 ? '上週' : (o > 0 ? o + ' 週後' : Math.abs(o) + ' 週前'),
+      heading: (w) => w + '最佳開會時間',
+      weekSubtitle: (r) => r + ' · 依常規空檔與臨時異動即時計算',
+      weekBtn: (w, a, b) => w + '：' + a + ' ~ ' + b,
+      monthTitle: (y, m) => y + ' 年 ' + m + ' 月',
+      recSubtitle: (n) => '至少 ' + n + ' 人可出席；全員到齊的時段排在最前面。',
+      ranks: ['首選', '次選', '備案'],
+      countLabel: (c, t) => c + '／' + t + ' 人可出席',
+      missing: (s) => '缺席：' + s, allHere: '全員到齊，無人缺席。',
+      emptyThis: '本週剩餘時間已無符合條件的時段，可以往後翻一週。',
+      emptyOther: (w, n) => w + '沒有至少 ' + n + ' 人可出席的時段。',
+      detailHint: '滑過或點擊任一格看誰能到',
+      detailYes: (s, n) => '可出席：' + s + '（' + n + ' 人）',
+      detailNo: (s) => '不可出席：' + s,
+      none: '無',
+      missShort: (s) => '　缺 ' + s,
+      pinHint: () => '請輸入你的固定密碼',
+      pinBad: '密碼不正確', copied: '已複製邀請文案', regResetDone: '已回到預設空檔',
+      needTimes: '請選擇開始與結束時間', endAfterStart: '結束時間要晚於開始時間',
+      needTimesDot: '請選擇開始與結束時間。', endAfterStartDot: '結束時間要晚於開始時間。',
+      updated: (n, r) => '已更新：' + n + ' ' + r,
+      gcalOpened: '已開啟 Google 日曆', gcalOpenedN: (n) => '已開啟 ' + n + ' 個 Google 日曆視窗',
+      rangeSum: (dow, r, h, d) => dow + ' ' + r + '　共 ' + h + ' 小時' + (d > 0 ? '（跨 ' + (d + 1) + ' 天）' : ''),
+      quick: ['當天全天', '下午 13–18', '晚上 18–21', '連續兩天'],
+      ovLeave: ' 請假', ovFree: ' 有空',
+      tmpLeave: '臨時請假', tmpFree: '臨時有空',
+      pickSummary: (n, h) => '已選 ' + n + ' 個時段 · 共 ' + h + ' 小時',
+      eventTitle: '研究室會議',
+      inviteHead: '【研究室會議候選時段】',
+      inviteLine: (i, l, c, t) => i + '. ' + l + '（' + c + '／' + t + ' 人可出席）',
+      inviteOne: (d, md, s, e, c, t) => '研究室會議：' + d + ' ' + md + ' ' + s + '–' + e + '（' + c + '/' + t + ' 人可出席）'
+    },
+    en: {
+      brand: '115 Senior Project · Meeting Time Survey',
+      inSync: (n) => n + ' people in sync',
+      matrixBtn: 'Detail matrix', studentBtn: 'Student area', close: 'Close',
+      weekLabel: 'Week', prevWeek: 'Previous week', nextWeek: 'Next week',
+      prevMonth: 'Previous month', nextMonth: 'Next month',
+      pickRowHint: 'Click a row to pick that week', backToThisWeek: 'This week', today: 'Today', todayBtn: 'Back to today',
+      groupLabel: 'Group', groupA: 'Group A', groupB: 'Group B', noGroup: 'Select at least one group to see slots',
+      recTitle: 'Recommended slots', overviewTitle: 'Weekly overview',
+      legendAll: 'Everyone free', legendOk: 'Meets threshold', legendNo: 'Below threshold',
+      gcal: 'Add to Google Calendar', copyInvite: 'Copy invite text', clear: 'Clear',
+      noBlocks: 'No slots meet the threshold',
+      iAm: 'I am', pinLabel: 'Enter your password', unlock: 'Unlock',
+      tabTemp: 'One-off change', tabReg: 'Regular availability',
+      typeLabel: 'Change type', typeOff: 'Unavailable / leave', typeOn: 'Newly available',
+      startLabel: 'Start (date + time)', endLabel: 'End (date + time)',
+      noteLabel: 'Reason (optional, 15 chars)', notePlaceholder: 'e.g. thesis defense clash',
+      submit: 'Submit and update', myChanges: 'Logged changes', revoke: 'Undo',
+      regHint: 'Tap cells to set your regular free hours this term. Gold means free; changes apply immediately.',
+      clearAll: 'Clear all', resetDefault: 'Reset to default',
+      matrixTitle: 'Member status detail', slotCol: 'Slot',
+      mAvail: 'available', mBusy: 'usually busy', mLeave: 'one-off leave (hover for reason)', mOpen: 'one-off opening',
+      dows: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+      dowsShort: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+      pickerDows: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
+      sep: ', ',
+      weekName: (o) => o === 0 ? 'This week' : o === 1 ? 'Next week' : o === -1 ? 'Last week' : (o > 0 ? 'In ' + o + ' weeks' : Math.abs(o) + ' weeks ago'),
+      heading: (w) => w + '’s best meeting times',
+      weekSubtitle: (r) => r + ' · computed live from regular availability and one-off changes',
+      weekBtn: (w, a, b) => w + ': ' + a + ' – ' + b,
+      monthTitle: (y, m) => ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m - 1] + ' ' + y,
+      recSubtitle: (n) => 'At least ' + n + ' can attend; full-attendance slots rank first.',
+      ranks: ['First choice', 'Second choice', 'Backup'],
+      countLabel: (c, t) => c + ' of ' + t + ' can attend',
+      missing: (s) => 'Missing: ' + s, allHere: 'Everyone can attend.',
+      emptyThis: 'No slots left this week — try flipping to next week.',
+      emptyOther: (w, n) => 'No slot with at least ' + n + ' attendees ' + w.toLowerCase() + '.',
+      detailHint: 'Hover or tap a cell to see who can attend',
+      detailYes: (s, n) => 'Available: ' + s + ' (' + n + ')',
+      detailNo: (s) => 'Unavailable: ' + s,
+      none: 'none',
+      missShort: (s) => '  missing ' + s,
+      pinHint: () => 'Enter your assigned password',
+      pinBad: 'Incorrect password', copied: 'Invite text copied', regResetDone: 'Reset to default availability',
+      needTimes: 'Pick a start and end time', endAfterStart: 'End must be after start',
+      needTimesDot: 'Pick a start and end time.', endAfterStartDot: 'End must be after start.',
+      updated: (n, r) => 'Updated: ' + n + ' ' + r,
+      gcalOpened: 'Google Calendar opened', gcalOpenedN: (n) => 'Opened ' + n + ' Google Calendar windows',
+      rangeSum: (dow, r, h, d) => dow + ' ' + r + ' · ' + h + ' hours' + (d > 0 ? ' (across ' + (d + 1) + ' days)' : ''),
+      quick: ['All day', 'Afternoon 13–18', 'Evening 18–21', 'Two days'],
+      ovLeave: ' leave', ovFree: ' free',
+      tmpLeave: 'One-off leave', tmpFree: 'One-off opening',
+      pickSummary: (n, h) => n + ' slots selected · ' + h + ' hours',
+      eventTitle: 'Lab meeting',
+      inviteHead: '[Lab meeting — candidate slots]',
+      inviteLine: (i, l, c, t) => i + '. ' + l + ' (' + c + '/' + t + ' can attend)',
+      inviteOne: (d, md, s, e, c, t) => 'Lab meeting: ' + d + ' ' + md + ' ' + s + '–' + e + ' (' + c + '/' + t + ' can attend)'
+    }
+  };
+
+  state = {
+    lang: 'zh',
+    week: 0, threshold: 'core', groups: ['A', 'B'],
+    sel: null, wide: true, picks: [],
+    drawerOpen: false, matrixOpen: false,
+    who: 'ta', type: 'off', startAt: '', endAt: '', note: '',
+    dataLoaded: true, busy: false, connected: false, syncStatus: '正在連線…', pinInput: '', verified: [], tab: 'temp', regEdits: {},
+    matrixDay: 0, toast: '', overrides: [], pickerOpen: false, pickerMonth: null
+  };
+
+  get L() { return this.DICT[this.state.lang] || this.DICT.zh; }
+  get dows() { return this.L.dows; }
+  nameOf(m) { return m.name; }
+
+  componentDidMount() {
+    try { const l = localStorage.getItem(this.LKEY); if (l === 'en' || l === 'zh') this.setState({ lang: l }); } catch (e) {}
+    this.store = window.teamStore;
+    this.unsubscribe = this.store.subscribe(data => {
+      this.members = (data.members && data.members.length === 7) ? data.members : this.members;
+      this.defaults = data.defaults || this.defaults;
+      this.setState({
+        who: data.member || this.state.who,
+        dataLoaded: true,
+        regEdits: data.regEdits || {},
+        overrides: data.overrides || [],
+        busy: data.busy,
+        connected: data.connected,
+        verified: data.member ? [data.member] : [],
+        syncStatus: this.store.text(this.state.lang),
+        sel: null
+      });
+    });
+    this.watchWeek();
+    this.store.init();
+    this.measure();
+    this._onResize = () => this.measure();
+    window.addEventListener('resize', this._onResize);
+    const t = this.iso(new Date());
+    this.setState({ startAt: t + 'T18:00', endAt: t + 'T20:00', matrixDay: 0 });
+  }
+  localISO(d) { return this.iso(d) + 'T' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+  ovRange(o) {
+    if (o.startAt) { const s = new Date(o.startAt), e = new Date(o.endAt); return isNaN(s) || isNaN(e) ? null : { s, e }; }
+    if (o.date) { const s = new Date(o.date + 'T00:00'), e = new Date(o.date + 'T00:00'); s.setHours(o.start); e.setHours(o.end); return { s, e }; }
+    return null;
+  }
+  fmtDT(d, withDate) { return (withDate ? (d.getMonth() + 1) + '/' + d.getDate() + ' ' : '') + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+  fmtRange(s, e) {
+    const sameDay = this.iso(s) === this.iso(e);
+    return this.fmtDT(s, true) + ' – ' + this.fmtDT(e, !sameDay);
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this._onResize); this.unsubscribe?.(); this.store.weekStop?.(); this.store.stops.forEach(stop=>stop()); }
+  measure() { const w = window.innerWidth; if ((w >= 760) !== this.state.wide) this.setState({ wide: w >= 760 }); }
+
+  /* — data helpers — */
+  get dayStart() { return this.props.dayStart ?? 8; }
+  get dayEnd() { return this.props.dayEnd ?? 21; }
+  get showWeekend() { return this.props.showWeekend ?? true; }
+  get scope() {
+    const gs = this.state.groups;
+    return this.members.filter(m => gs.includes(m.group));
+  }
+  get need() {
+    const n = this.scope.length;
+    return this.state.threshold === 'all' ? n : Math.max(2, n >= 5 ? n - 2 : n - 1);
+  }
+  toggleGroup(g) {
+    const gs = this.state.groups;
+    const next = gs.includes(g) ? gs.filter(x => x !== g) : [...gs, g];
+    this.setState({ groups: next, sel: null });
+  }
+  iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  weekDays(offset) {
+    const t = new Date(); t.setHours(0, 0, 0, 0);
+    const mon = new Date(t); mon.setDate(t.getDate() - ((t.getDay() + 6) % 7) + offset * 7);
+    const out = [];
+    for (let i = 0; i < 7; i++) { const d = new Date(mon); d.setDate(mon.getDate() + i); out.push(d); }
+    return this.showWeekend ? out : out.slice(0, 5);
+  }
+  hours() { const a = []; for (let h = this.dayStart; h < this.dayEnd; h++) a.push(h); return a; }
+  hm(h) { return String(h).padStart(2, '0') + ':00'; }
+  defaultHours(mid, dow) {
+    if (this.defaults?.[mid]) return this.defaults[mid][dow] || [];
+    const out = [];
+    (this.reg[mid][dow] || []).forEach(r => { for (let h = r[0]; h < r[1]; h++) out.push(h); });
+    return out;
+  }
+  hoursOf(mid, dow) {
+    const e = this.state.regEdits[mid];
+    return e && e[dow] ? e[dow] : (e ? [] : this.defaultHours(mid, dow));
+  }
+  freeReg(mid, dow, h) { return this.hoursOf(mid, dow).includes(h); }
+  saveReg(edits) { return this.store.saveWeek(this.state.who, edits[this.state.who]); }
+  toggleReg(mid, dow, h) {
+    if (!this.state.connected || this.state.busy) return;
+    const e = { ...this.state.regEdits };
+    if (!e[mid]) { e[mid] = {}; for (let d = 0; d < 7; d++) { const hs = this.defaultHours(mid, d); if (hs.length) e[mid][d] = hs; } }
+    const cur = e[mid][dow] ? [...e[mid][dow]] : [];
+    const i = cur.indexOf(h);
+    if (i >= 0) cur.splice(i, 1); else cur.push(h);
+    e[mid] = { ...e[mid], [dow]: cur.sort((a, b) => a - b) };
+    this.saveReg(e);
+  }
+  cellInfo(date, h) {
+    const dow = date.getDay(), yes = [], no = [];
+    const cs = new Date(date); cs.setHours(h, 0, 0, 0);
+    const ce = new Date(cs.getTime() + 3600000);
+    this.scope.forEach(m => {
+      const {free, override:ov} = window.scheduleSlotState(this.freeReg(m.id, dow, h),
+        this.state.overrides, m.id, this.localISO(cs), this.localISO(ce));
+      (free ? yes : no).push({ m, ov });
+    });
+    return { yes, no, count: yes.length, total: this.scope.length };
+  }
+
+  /* — actions — */
+  flash(msg) { this.setState({ toast: msg }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: '' }), 2200); }
+  copy(text, msg) {
+    try { navigator.clipboard.writeText(text); } catch (e) {}
+    this.flash(msg);
+  }
+
+  monday(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+  offsetOf(d) { return Math.round((this.monday(d) - this.monday(new Date())) / 604800000); }
+  weekName(off) { return this.L.weekName(off); }
+  watchWeek(off = this.state.week) {
+    const days = this.weekDays(off), end = new Date(days[0]); end.setDate(end.getDate()+7);
+    this.store.watchWeek(this.iso(days[0])+'T00:00',this.iso(end)+'T00:00');
+  }
+  setWeek(off) { this.watchWeek(off); this.setState({ week: off, sel: null, picks: [], matrixDay: 0, pickerOpen: false }); }
+
+  togglePick(key) {
+    const p = this.state.picks;
+    this.setState({ picks: p.includes(key) ? p.filter(k => k !== key) : [...p, key] });
+  }
+  togglePickMany(keys) {
+    const p = this.state.picks;
+    const allOn = keys.every(k => p.includes(k));
+    this.setState({ picks: allOn ? p.filter(k => !keys.includes(k)) : [...p, ...keys.filter(k => !p.includes(k))] });
+  }
+  pickBlocks() {
+    const list = this.state.picks.map(k => { const a = k.split('#'); return { iso: a[0], h: +a[1] }; })
+      .sort((a, b) => a.iso < b.iso ? -1 : a.iso > b.iso ? 1 : a.h - b.h);
+    const out = [];
+    list.forEach(p => {
+      const last = out[out.length - 1];
+      if (last && last.iso === p.iso && last.end === p.h) last.end = p.h + 1;
+      else out.push({ iso: p.iso, start: p.h, end: p.h + 1 });
+    });
+    return out.map(b => {
+      const d = new Date(b.iso + 'T00:00');
+      let min = Infinity;
+      for (let h = b.start; h < b.end; h++) min = Math.min(min, this.cellInfo(d, h).count);
+      return { ...b, date: d, count: min === Infinity ? 0 : min, label: this.dows[d.getDay()] + ' ' + (d.getMonth() + 1) + '/' + d.getDate() + ' ' + this.hm(b.start) + '–' + this.hm(b.end) };
+    });
+  }
+  gcalUrlFor(b) {
+    const p = (h) => b.date.getFullYear() + String(b.date.getMonth() + 1).padStart(2, '0') + String(b.date.getDate()).padStart(2, '0') + 'T' + String(h).padStart(2, '0') + '0000';
+    return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(this.L.eventTitle) + '&ctz=Asia%2FTaipei&dates=' + p(b.start) + '/' + p(b.end);
+  }
+
+  baseCellStyle(c, need, total) {
+    const base = { border: 'none', borderRadius: 'var(--radius-sm)', flex: 1, minWidth: 0, height: '30px', cursor: 'pointer', font: 'inherit', fontSize: '11px', fontFeatureSettings: "'tnum'", display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform .1s' };
+    if (total > 0 && c.count === total) return { ...base, background: 'var(--color-accent-300)', boxShadow: 'inset 0 0 0 1px var(--color-accent-700)', color: 'var(--color-accent-900)' };
+    if (c.count >= need && c.count > 0) return { ...base, background: 'var(--color-accent-100)', boxShadow: 'inset 0 0 0 1px var(--color-accent-400)', color: 'var(--color-accent-800)' };
+    return { ...base, background: 'transparent', boxShadow: 'inset 0 0 0 1px var(--color-divider)', color: 'var(--color-neutral-500)', opacity: 0.55 };
+  }
+
+  renderVals() {
+    const S = this.state, L = this.L, sep = L.sep;
+    const days = this.weekDays(S.week), hours = this.hours(), need = this.need, total = this.scope.length;
+    const todayStr = this.iso(new Date());
+    const dayMeta = days.map(d => {
+      const we = d.getDay() === 0 || d.getDay() === 6;
+      const isToday = this.iso(d) === todayStr;
+      return {
+        date: d, dow: this.dows[d.getDay()], dowShort: L.dowsShort[d.getDay()], md: (d.getMonth() + 1) + '/' + d.getDate(), weekend: we, today: isToday,
+        todayTag: isToday ? L.today : '',
+        headStyle: isToday
+          ? { flex: 1, minWidth: 0, textAlign: 'center', paddingBottom: '6px', borderBottom: '1px solid var(--color-accent-700)', color: 'var(--color-accent-900)' }
+          : { flex: 1, minWidth: 0, textAlign: 'center', paddingBottom: '6px', borderBottom: '1px solid var(--color-divider)', opacity: we ? 0.42 : 1 },
+        cardStyle: { borderTop: isToday ? '2px solid var(--color-accent-700)' : '1px solid var(--color-divider)', paddingTop: 'var(--space-3)', opacity: we && !isToday ? 0.5 : 1 }
+      };
+    });
+
+    const cellStyle = (c, we, picked, isToday) => {
+      if (picked) return { border: 'none', borderRadius: 'var(--radius-sm)', flex: 1, minWidth: 0, height: '30px', cursor: 'pointer', font: 'inherit', fontSize: '14px', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-accent-700)', color: 'var(--color-neutral-100)', boxShadow: 'inset 0 0 0 1px var(--color-accent-900)' };
+      const dim = (s) => (we && !isToday) ? { ...s, opacity: Math.max(0.55, (s.opacity ?? 1) * 0.42) } : s;
+      const s = dim(this.baseCellStyle(c, need, total));
+      return (isToday && s.background === 'transparent') ? { ...s, color: 'var(--color-neutral-900)' } : s;
+    };
+
+    const rows = hours.map(h => ({
+      label: this.hm(h),
+      cells: dayMeta.map(dm => {
+        const c = this.cellInfo(dm.date, h);
+        const key = this.iso(dm.date) + '#' + h;
+        const picked = S.picks.includes(key);
+        return {
+          style: cellStyle(c, dm.weekend, picked, dm.today),
+          text: picked ? '✓' : String(c.count),
+          hover: () => this.setState({ sel: { key, dm, h, c } }),
+          pick: () => this.togglePick(key)
+        };
+      })
+    }));
+
+    /* runs of identical availability, for recommendations */
+    const runs = [];
+    dayMeta.forEach(dm => {
+      let cur = null;
+      hours.forEach(h => {
+        const c = this.cellInfo(dm.date, h);
+        const sig = c.yes.map(y => y.m.id).join(',');
+        if (cur && cur.sig === sig && cur.end === h) { cur.end = h + 1; }
+        else { if (cur) runs.push(cur); cur = { dm, sig, c, start: h, end: h + 1 }; }
+      });
+      if (cur) runs.push(cur);
+    });
+    const now = new Date();
+    const good = runs
+      .filter(r => r.c.count >= need)
+      .filter(r => { if (S.week !== 0) return S.week > 0; const d = new Date(r.dm.date); d.setHours(r.end); return d >= now; })
+      .sort((a, b) => (b.c.count - a.c.count) || ((b.end - b.start) - (a.end - a.start)) || (a.dm.date - b.dm.date))
+      .slice(0, 3);
+
+    const gcal = (r) => {
+      const p = (d, h) => d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0') + 'T' + String(h).padStart(2, '0') + '0000';
+      return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(L.eventTitle) + '&ctz=Asia%2FTaipei&dates=' + p(r.dm.date, r.start) + '/' + p(r.dm.date, r.end);
+    };
+
+    const recs = good.map((r, i) => ({
+      rank: L.ranks[i],
+      title: r.dm.dow + ' ' + r.dm.md + '　' + this.hm(r.start) + '–' + this.hm(r.end),
+      countLabel: L.countLabel(r.c.count, total),
+      missingLabel: r.c.no.length ? L.missing(r.c.no.map(n => this.nameOf(n.m) + (n.ov && n.ov.note ? '（' + n.ov.note + '）' : '')).join(sep)) : L.allHere,
+      cardStyle: r.c.count === total ? { borderColor: 'var(--color-accent)' } : {},
+      gcalUrl: gcal(r),
+      copyInvite: () => this.copy(L.inviteOne(r.dm.dow, r.dm.md, this.hm(r.start), this.hm(r.end), r.c.count, total), L.copied)
+    }));
+
+    const dayCards = dayMeta.map(dm => {
+      const blocks = runs.filter(r => r.dm === dm && r.c.count >= need).map(r => {
+        const keys = []; for (let h = r.start; h < r.end; h++) keys.push(this.iso(dm.date) + '#' + h);
+        const picked = keys.every(k => S.picks.includes(k));
+        return {
+          time: (picked ? '✓ ' : '') + this.hm(r.start) + ' – ' + this.hm(r.end),
+          count: r.c.count + '/' + total + (r.c.no.length ? L.missShort(r.c.no.map(n => this.nameOf(n.m)).join(sep)) : ''),
+          style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '3px', width: '100%', textAlign: 'left', cursor: 'pointer', font: 'inherit', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1px solid ' + (picked ? 'var(--color-accent-700)' : r.c.count === total ? 'var(--color-accent)' : 'var(--color-divider)'), background: picked ? 'var(--color-accent-300)' : r.c.count === total ? 'var(--color-accent-100)' : 'transparent' },
+          toggle: () => this.togglePickMany(keys)
+        };
+      });
+      return { dow: dm.dow, md: dm.md, cardStyle: dm.cardStyle, blocks, empty: blocks.length === 0 };
+    });
+
+    const sel = S.sel;
+    const mChip = (on) => ({ cursor: 'pointer', font: 'inherit', fontSize: '13px', padding: '6px 12px', borderRadius: 'var(--radius-md)', background: on ? 'var(--color-accent-100)' : 'transparent', border: '1px solid ' + (on ? 'var(--color-accent)' : 'var(--color-divider)'), color: on ? 'var(--color-accent-800)' : 'inherit' });
+
+    const fs = S.startAt ? new Date(S.startAt) : null, fe = S.endAt ? new Date(S.endAt) : null;
+    const spanDays = fs && fe && fe > fs ? Math.round((new Date(this.iso(fe) + 'T00:00') - new Date(this.iso(fs) + 'T00:00')) / 86400000) : 0;
+    const rangeSummary = !fs || !fe || isNaN(fs) || isNaN(fe) ? L.needTimesDot
+      : fe <= fs ? L.endAfterStartDot
+      : L.rangeSum(this.dows[fs.getDay()], this.fmtRange(fs, fe), Math.round((fe - fs) / 360000) / 10, spanDays);
+
+    const myOv = S.overrides.filter(o => o.member === S.who).map(o => {
+      const r = this.ovRange(o);
+      return ({
+      label: (r ? this.fmtRange(r.s, r.e) : '') + (o.type === 'off' ? L.ovLeave : L.ovFree),
+      note: o.note || '',
+      remove: () => this.store.removeOverride(S.who, o.id)
+    });
+    });
+
+    /* matrix */
+    const mDay = dayMeta[Math.min(S.matrixDay, dayMeta.length - 1)] || dayMeta[0];
+    const matrixRows = hours.map(h => {
+      const c = this.cellInfo(mDay.date, h);
+      const by = {}; c.yes.forEach(y => by[y.m.id] = { ok: true, ov: y.ov }); c.no.forEach(n => by[n.m.id] = { ok: false, ov: n.ov });
+      return {
+        label: this.hm(h) + '–' + this.hm(h + 1),
+        cells: this.scope.map(m => {
+          const s = by[m.id] || { ok: false };
+          const temp = !!s.ov;
+          return {
+            mark: temp ? (s.ok ? '＋' : '！') : (s.ok ? '〇' : '✕'),
+            title: s.ov ? (s.ov.type === 'off' ? L.tmpLeave : L.tmpFree) + (s.ov.note ? '：' + s.ov.note : '') : '',
+            style: { textAlign: 'center', fontFeatureSettings: "'tnum'", color: temp ? 'var(--color-accent-700)' : (s.ok ? 'var(--color-text)' : 'var(--color-neutral-400)'), fontWeight: temp ? 600 : 400 }
+          };
+        })
+      };
+    });
+
+    /* week picker */
+    const md = (d) => (d.getMonth() + 1) + '/' + d.getDate();
+    const selMon = this.monday(days[0]);
+    const pmBase = S.pickerMonth ? new Date(S.pickerMonth) : new Date(selMon.getFullYear(), selMon.getMonth(), 1);
+    const pm = new Date(pmBase.getFullYear(), pmBase.getMonth(), 1);
+    const todayISO = this.iso(new Date());
+    const gridStart = this.monday(pm);
+    const pickerRows = [];
+    for (let w = 0; w < 6; w++) {
+      const rowMon = new Date(gridStart); rowMon.setDate(gridStart.getDate() + w * 7);
+      const off = this.offsetOf(rowMon);
+      const isSel = off === S.week;
+      const cells = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(rowMon); d.setDate(rowMon.getDate() + i);
+        const out = d.getMonth() !== pm.getMonth();
+        const today = this.iso(d) === todayISO;
+        cells.push({
+          label: String(d.getDate()),
+          style: { flex: 1, textAlign: 'center', fontSize: '12px', fontFeatureSettings: "'tnum'", padding: '5px 0', borderRadius: 'var(--radius-sm)', opacity: out ? 0.38 : 1, fontWeight: today ? 600 : 400, boxShadow: today ? 'inset 0 0 0 1px var(--color-accent)' : 'none' }
+        });
+      }
+      pickerRows.push({
+        days: cells,
+        pick: () => this.setWeek(off),
+        style: { display: 'flex', gap: '2px', width: '100%', border: 'none', cursor: 'pointer', font: 'inherit', color: 'inherit', padding: '2px', borderRadius: 'var(--radius-sm)', background: isSel ? 'var(--color-accent-100)' : 'transparent', boxShadow: 'inset 0 0 0 1px ' + (isSel ? 'var(--color-accent)' : 'transparent') }
+      });
+    }
+
+    const pBlocks = this.pickBlocks();
+    const pickHours = S.picks.length;
+    const pickText = L.inviteHead + '\n' + pBlocks.map((b, i) => L.inviteLine(i + 1, b.label, b.count, total)).join('\n');
+
+    return {
+      T: L,
+      langBtn: S.lang === 'zh' ? 'EN' : '中文',
+      toggleLang: () => {
+        const next = S.lang === 'zh' ? 'en' : 'zh';
+        this.setState({ lang: next });
+        try { localStorage.setItem(this.LKEY, next); } catch (e) {}
+      },
+      brandSub: L.inSync(this.members.length),
+      picksAny: pickHours > 0,
+      pickSummary: L.pickSummary(pBlocks.length, pickHours),
+      pickDetail: pBlocks.map(b => b.label).join(sep),
+      clearPicks: () => this.setState({ picks: [] }),
+      addToGcal: () => {
+        pBlocks.forEach((b, i) => setTimeout(() => window.open(this.gcalUrlFor(b), '_blank', 'noopener'), i * 300));
+        this.flash(pBlocks.length > 1 ? L.gcalOpenedN(pBlocks.length) : L.gcalOpened);
+      },
+      copyPickInvite: () => this.copy(pickText, L.copied),
+      weekHeading: L.heading(this.weekName(S.week)),
+      weekSubtitle: L.weekSubtitle(dayMeta[0].md + ' – ' + dayMeta[dayMeta.length - 1].md),
+      weekBtnLabel: L.weekBtn(this.weekName(S.week), md(selMon), md(new Date(selMon.getTime() + 6 * 86400000))),
+      weekPrev: () => this.setWeek(S.week - 1),
+      weekNext: () => this.setWeek(S.week + 1),
+      togglePicker: () => this.setState({ pickerOpen: !S.pickerOpen, pickerMonth: null }),
+      pickerOpen: S.pickerOpen,
+      pickerTitle: L.monthTitle(pm.getFullYear(), pm.getMonth() + 1),
+      pickerDows: L.pickerDows,
+      pickerRows,
+      monthPrev: () => this.setState({ pickerMonth: new Date(pm.getFullYear(), pm.getMonth() - 1, 1).toISOString() }),
+      monthNext: () => this.setState({ pickerMonth: new Date(pm.getFullYear(), pm.getMonth() + 1, 1).toISOString() }),
+      backToThisWeek: () => this.setWeek(0),
+      recSubtitle: L.recSubtitle(need),
+      recs, noRecs: recs.length === 0,
+      emptyText: S.week === 0 ? L.emptyThis : L.emptyOther(this.weekName(S.week), need),
+      days: dayMeta, rows, dayCards,
+      wide: S.wide, narrow: !S.wide,
+      gpIsA: S.groups.includes('A'), gpIsB: S.groups.includes('B'),
+      hasScope: S.dataLoaded && total > 0, noScope: S.dataLoaded && total === 0,
+      todayInWeek: dayMeta.some(dm => dm.today),
+      todayBandStyle: (() => {
+        const i = dayMeta.findIndex(dm => dm.today);
+        if (i < 0) return { display: 'none' };
+        const col = '((100% - 75px) / 7)';
+        return {
+          position: 'absolute', top: '-6px', bottom: '-6px', zIndex: 0,
+          left: 'calc(57px + ' + i + ' * (' + col + ' + 3px))',
+          width: 'calc(' + col + ')',
+          background: 'rgba(20,16,12,0.05)',
+          boxShadow: '0 0 0 2.5px var(--color-accent-900)',
+          borderRadius: 'var(--radius-sm)',
+          pointerEvents: 'none',
+          animation: 'todayBreathe 3.4s ease-in-out infinite'
+        };
+      })(),
+      toggleGpA: () => this.toggleGroup('A'),
+      toggleGpB: () => this.toggleGroup('B'),
+      detailTitle: sel ? sel.dm.dow + ' ' + sel.dm.md + '　' + this.hm(sel.h) + '–' + this.hm(sel.h + 1) : L.detailHint,
+      detailYes: sel ? L.detailYes(sel.c.yes.map(y => this.nameOf(y.m)).join(sep) || L.none, sel.c.count) : '',
+      detailNo: sel && sel.c.no.length ? L.detailNo(sel.c.no.map(n => this.nameOf(n.m) + (n.ov ? '（' + (n.ov.note || L.tmpLeave) + '）' : '')).join(sep)) : '',
+      openDrawer: () => this.setState({ drawerOpen: true }),
+      closeDrawer: () => this.setState({ drawerOpen: false }),
+      openMatrix: () => this.setState({ matrixOpen: true }),
+      closeMatrix: () => this.setState({ matrixOpen: false }),
+      stop: (e) => e.stopPropagation(),
+      drawerOpen: S.drawerOpen, matrixOpen: S.matrixOpen, toast: S.toast,
+      drawerStyle: { width: 'min(520px,100%)', maxHeight: '92vh', overflow: 'auto', background: 'var(--color-surface)', borderTop: '1px solid var(--color-divider)', borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0', padding: 'var(--space-4)', boxShadow: 'var(--shadow-lg)', animation: 'slideIn .2s ease-out', marginBottom: 0 },
+      matrixStyle: { width: 'min(880px,100%)', maxHeight: '88vh', display: 'flex', flexDirection: 'column', background: 'var(--color-surface)', border: '1px solid var(--color-divider)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)', boxShadow: 'var(--shadow-lg)' },
+      memberChips: this.members.map(m => ({ name: this.nameOf(m), style: mChip(S.who === m.id), pick: async () => { if (this.store.state.busy) return; await this.store.logout(); this.setState({ who: m.id, pinInput: '', verified: [] }); } })),
+      needPin: !S.verified.includes(S.who),
+      unlocked: S.verified.includes(S.who),
+      tabIsTemp: S.tab === 'temp', tabIsReg: S.tab === 'reg',
+      tabTemp: S.verified.includes(S.who) && S.tab === 'temp',
+      tabReg: S.verified.includes(S.who) && S.tab === 'reg',
+      setTabTemp: () => this.setState({ tab: 'temp' }),
+      setTabReg: () => this.setState({ tab: 'reg' }),
+      pinInput: S.pinInput,
+      showSyncNotice: !S.connected && ['offline', 'failed', 'config'].includes(this.store?.state.status) && !S.drawerOpen,
+      syncStatus: this.store ? this.store.text(S.lang) : S.syncStatus,
+      dataUnavailable: !S.dataLoaded, busy: S.busy, authDisabled: S.busy || !S.connected,
+      editDisabled: S.busy || !S.connected,
+      logoutLabel: S.lang === 'zh' ? '登出' : 'Sign out',
+      logout: () => this.store.logout(),
+      pinHint: L.pinHint(),
+      setPin: (e) => this.setState({ pinInput: e.target.value }),
+      unlock: async () => {
+        const ok = await this.store.login(S.who, S.pinInput);
+        this.setState({pinInput:''});
+        if (!ok) this.flash(this.store.text(S.lang));
+      },
+      regDays: dayMeta.map(dm => ({ label: dm.dowShort, style: { flex: 1, minWidth: 0, textAlign: 'center', fontFamily: 'var(--font-heading)', fontSize: '13px', paddingBottom: '4px', opacity: dm.weekend ? 0.5 : 1 } })),
+      regRows: hours.map(h => ({
+        label: this.hm(h),
+        cells: dayMeta.map(dm => {
+          const on = this.hoursOf(S.who, dm.date.getDay()).includes(h);
+          return {
+            style: { flex: 1, minWidth: 0, height: '24px', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', background: on ? 'var(--color-accent-300)' : 'transparent', boxShadow: 'inset 0 0 0 1px ' + (on ? 'var(--color-accent-700)' : 'var(--color-divider)'), opacity: dm.weekend && !on ? 0.45 : 1 },
+            toggle: () => this.toggleReg(S.who, dm.date.getDay(), h)
+          };
+        })
+      })),
+      regClear: () => { const e = { ...S.regEdits }; e[S.who] = {}; this.saveReg(e); },
+      regReset: () => { const e = { ...S.regEdits }; delete e[S.who]; this.saveReg(e); },
+      typeIsOff: S.type === 'off', typeIsOn: S.type === 'on',
+      setTypeOff: () => this.setState({ type: 'off' }), setTypeOn: () => this.setState({ type: 'on' }),
+      formStartAt: S.startAt, formEndAt: S.endAt, formNote: S.note, rangeSummary,
+      setFormStartAt: (e) => {
+        const v = e.target.value; const ns = new Date(v);
+        const patch = { startAt: v };
+        if (v && !isNaN(ns) && (!S.endAt || new Date(S.endAt) <= ns)) patch.endAt = this.localISO(new Date(ns.getTime() + 7200000));
+        this.setState(patch);
+      },
+      setFormEndAt: (e) => this.setState({ endAt: e.target.value }),
+      setFormNote: (e) => this.setState({ note: e.target.value }),
+      quickRanges: (() => {
+        const base = fs && !isNaN(fs) ? fs : new Date();
+        const at = (dayOffset, h) => { const d = new Date(base); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + dayOffset); d.setHours(h); return this.localISO(d); };
+        return [
+          { label: L.quick[0], pick: () => this.setState({ startAt: at(0, this.dayStart), endAt: at(0, this.dayEnd) }) },
+          { label: L.quick[1], pick: () => this.setState({ startAt: at(0, 13), endAt: at(0, 18) }) },
+          { label: L.quick[2], pick: () => this.setState({ startAt: at(0, 18), endAt: at(0, 21) }) },
+          { label: L.quick[3], pick: () => this.setState({ startAt: at(0, this.dayStart), endAt: at(1, this.dayEnd) }) }
+        ];
+      })(),
+      submitOverride: async () => {
+        const start = new Date(S.startAt), end = new Date(S.endAt);
+        if (!S.startAt || !S.endAt || isNaN(start) || isNaN(end)) { this.flash(L.needTimes); return; }
+        if (end <= start) { this.flash(L.endAfterStart); return; }
+        if (Array.from(S.note).length > 15) return;
+        const ok = await this.store.addOverride(S.who,{startAt:S.startAt,endAt:S.endAt,type:S.type,note:S.note});
+        if(ok) this.setState({note:'',drawerOpen:false,sel:null});
+        else this.flash(this.store.text(S.lang));
+      },
+      myOverrides: myOv, hasMyOverrides: myOv.length > 0,
+      dayTabs: dayMeta.map((dm, i) => ({ label: dm.dow + ' ' + dm.md, style: mChip(i === Math.min(S.matrixDay, dayMeta.length - 1)), pick: () => this.setState({ matrixDay: i }) })),
+      matrixMembers: this.scope.map(m => ({ name: this.nameOf(m) })), matrixRows
+    };
+  }
+}
+</script>
+</body>
+</html>
