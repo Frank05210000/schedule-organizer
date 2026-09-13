@@ -49,7 +49,7 @@ try {
  const start=await p.evaluate(()=>window.teamStore.range[0].slice(0,10)+'T08:30');
  await p.locator('input[type="datetime-local"]').nth(0).fill(start);
  await p.locator('input[type="datetime-local"]').nth(1).fill(start.slice(0,10)+'T09:30');
- await p.getByPlaceholder('例：論文口試衝堂').fill('測試同步');
+ await p.getByPlaceholder('頭髮骨折要去看醫生').fill('測試同步');
  await p.getByRole('button',{name:'送出，立即更新'}).click();
  await prof.waitForFunction(()=>window.teamStore.state.overrides.some(o=>o.note==='測試同步'));
  assert.equal(await prof.evaluate(()=>window.teamStore.state.overrides.find(o=>o.note==='測試同步').startAt),start);
