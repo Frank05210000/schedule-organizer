@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>📅 115-大三專題-開會時間調查</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -21,7 +22,6 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
   <div class="nav" style="position:sticky;top:0;z-index:20;background:var(--color-bg);flex-wrap:wrap;gap:var(--space-2)">
     <div class="nav-brand" style="margin-right:auto;display:flex;align-items:baseline;gap:10px">
       {{ T.brand }}
-      <span style="font-family:var(--font-body);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-accent)">{{ brandSub }}</span>
     </div>
     <button class="btn btn-ghost" style="font-size:12px;letter-spacing:.06em;padding:6px 11px" onClick="{{ toggleLang }}" aria-label="Language">{{ langBtn }}</button>
     <button class="btn btn-secondary" onClick="{{ openMatrix }}">{{ T.matrixBtn }}</button>
@@ -271,27 +271,23 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
             <button style="{{ t.style }}" onClick="{{ t.pick }}">{{ t.label }}</button>
           </sc-for>
         </div>
-        <div style="overflow:auto;flex:1;min-height:0">
-          <table class="table" style="min-width:520px">
-            <thead>
-              <tr>
-                <th style="position:sticky;left:0;background:var(--color-surface)">{{ T.slotCol }}</th>
-                <sc-for list="{{ matrixMembers }}" as="m" hint-placeholder-count="7">
-                  <th style="text-align:center">{{ m.name }}</th>
-                </sc-for>
-              </tr>
-            </thead>
-            <tbody>
-              <sc-for list="{{ matrixRows }}" as="r" hint-placeholder-count="13">
-                <tr>
-                  <td style="font-feature-settings:'tnum';font-size:12px;white-space:nowrap;position:sticky;left:0;background:var(--color-surface)">{{ r.label }}</td>
-                  <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7">
-                    <td style="{{ c.style }}" title="{{ c.title }}">{{ c.mark }}</td>
-                  </sc-for>
-                </tr>
+        <div style="overflow:auto;flex:1;min-height:0;border:1px solid var(--color-divider);border-radius:var(--radius-md)">
+          <div style="min-width:540px;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;background:var(--color-surface-subtle);border-bottom:1px solid var(--color-divider);position:sticky;top:0;z-index:2">
+              <div style="width:105px;flex:none;font-size:12px;font-weight:600;color:var(--color-neutral-600);padding:9px 12px;position:sticky;left:0;background:var(--color-surface-subtle);z-index:3">{{ T.slotCol }}</div>
+              <sc-for list="{{ matrixMembers }}" as="m" hint-placeholder-count="7">
+                <div style="flex:1;min-width:56px;text-align:center;font-size:12px;font-weight:600;color:var(--color-neutral-700);padding:9px 4px">{{ m.name }}</div>
               </sc-for>
-            </tbody>
-          </table>
+            </div>
+            <sc-for list="{{ matrixRows }}" as="r" hint-placeholder-count="13">
+              <div style="display:flex;align-items:center;border-bottom:1px solid var(--color-divider);min-height:34px">
+                <div style="width:105px;flex:none;font-feature-settings:'tnum';font-size:12px;white-space:nowrap;padding:7px 12px;color:var(--color-neutral-600);position:sticky;left:0;background:var(--color-surface);z-index:1">{{ r.label }}</div>
+                <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7">
+                  <div style="{{ c.style }}" title="{{ c.title }}">{{ c.mark }}</div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
         </div>
         <p class="text-muted" style="font-size:12px;margin:var(--space-3) 0 0">〇 {{ T.mAvail }}　✕ {{ T.mBusy }}　<span style="color:var(--color-accent-700)">！</span> {{ T.mLeave }}　<span style="color:var(--color-accent-700)">＋</span> {{ T.mOpen }}</p>
       </div>
@@ -568,8 +564,64 @@ class Component extends DCLogic {
   save(list) { this.setState({ overrides: list }); try { localStorage.setItem(this.KEY, JSON.stringify(list)); } catch (e) {} }
   flash(msg) { this.setState({ toast: msg }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: '' }), 2200); }
   copy(text, msg) {
-    try { navigator.clipboard.writeText(text); } catch (e) {}
-    this.flash(msg);
+    const fallback = (str) => {
+      let ok = false;
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = str;
+        ta.style.position = 'fixed';
+        ta.style.top = '0';
+        ta.style.left = '-9999px';
+        ta.style.width = '2em';
+        ta.style.height = '2em';
+        ta.style.padding = '0';
+        ta.style.border = 'none';
+        ta.style.outline = 'none';
+        ta.style.boxShadow = 'none';
+        ta.style.background = 'transparent';
+        ta.setAttribute('readonly', '');
+        document.body.appendChild(ta);
+
+        const isiOS = /ipad|ipod|iphone/i.test(navigator.userAgent);
+        if (isiOS) {
+          const range = document.createRange();
+          range.selectNodeContents(ta);
+          const sel = window.getSelection();
+          if (sel) {
+            sel.removeAllRanges();
+            sel.addRange(range);
+          }
+          ta.setSelectionRange(0, str.length);
+        } else {
+          ta.focus();
+          ta.select();
+        }
+
+        ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch (e) {
+        ok = false;
+      }
+      return ok;
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => {
+        this.flash(msg);
+      }).catch(() => {
+        if (fallback(text)) {
+          this.flash(msg);
+        } else {
+          window.prompt(this.state.lang === 'zh' ? '請手動複製邀請文案：' : 'Please copy invite text manually:', text);
+        }
+      });
+    } else {
+      if (fallback(text)) {
+        this.flash(msg);
+      } else {
+        window.prompt(this.state.lang === 'zh' ? '請手動複製邀請文案：' : 'Please copy invite text manually:', text);
+      }
+    }
   }
 
   monday(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
@@ -732,7 +784,12 @@ class Component extends DCLogic {
           return {
             mark: temp ? (s.ok ? '＋' : '！') : (s.ok ? '〇' : '✕'),
             title: s.ov ? (s.ov.type === 'off' ? L.tmpLeave : L.tmpFree) + (s.ov.note ? '：' + s.ov.note : '') : '',
-            style: { textAlign: 'center', fontFeatureSettings: "'tnum'", color: temp ? 'var(--color-accent-700)' : (s.ok ? 'var(--color-text)' : 'var(--color-neutral-400)'), fontWeight: temp ? 600 : 400 }
+            style: {
+              flex: 1, minWidth: '56px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFeatureSettings: "'tnum'", fontSize: '14px', padding: '6px 4px',
+              color: temp ? 'var(--color-accent-700)' : (s.ok ? 'var(--color-accent-800)' : 'var(--color-neutral-400)'),
+              fontWeight: temp || s.ok ? 600 : 400
+            }
           };
         })
       };

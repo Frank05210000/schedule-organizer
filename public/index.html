@@ -4,7 +4,22 @@
 <meta charset="utf-8">
 <link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>團隊出席排程</title>
+<title>📅 115-大三專題-開會時間調查</title>
+<meta name="description" content="彙整同學可開會時段，協助教授安排大三專題會議。">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:title" content="📅 115-大三專題-開會時間調查">
+<meta property="og:description" content="彙整同學可開會時段，協助教授安排大三專題會議。">
+<meta property="og:image" content="https://schedule-organizer-2026.web.app/images/meeting-availability-og-v1.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1732">
+<meta property="og:image:height" content="908">
+<meta property="og:image:alt" content="大三專題｜開會時間調查，以週曆色塊與淡色人數呈現可開會時段。">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="📅 115-大三專題-開會時間調查">
+<meta name="twitter:description" content="彙整同學可開會時段，協助教授安排大三專題會議。">
+<meta name="twitter:image" content="https://schedule-organizer-2026.web.app/images/meeting-availability-og-v1.png">
+<meta name="twitter:image:alt" content="大三專題｜開會時間調查，以週曆色塊與淡色人數呈現可開會時段。">
 <script src="./firebase-app.js"></script>
 <script>window.__resources = {
 "https://unpkg.com/react@18.3.1/umd/react.production.min.js": "/vendor/react.js",
@@ -26,12 +41,12 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
 </helmet>
 <div style="min-height:100vh;background:var(--color-bg);color:var(--color-text);padding-bottom:64px">
 
-  <div class="nav" style="position:sticky;top:0;z-index:20;background:var(--color-bg);flex-wrap:wrap;gap:var(--space-2)">
-    <div class="nav-brand" style="margin-right:auto;display:flex;align-items:baseline;gap:10px">
-      {{ T.brand }}
-      <span style="font-family:var(--font-body);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-accent)">{{ brandSub }}</span>
+  <div class="nav" style="position:sticky;top:0;z-index:20;flex-wrap:wrap;gap:var(--space-3)">
+    <div class="nav-brand" style="margin-right:auto;display:flex;align-items:center;gap:10px">
+      <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:var(--color-accent-100);color:var(--color-accent-700);border-radius:var(--radius-sm);font-size:15px">📅</span>
+      <span>{{ T.brand }}</span>
     </div>
-    <button class="btn btn-ghost" style="font-size:12px;letter-spacing:.06em;padding:6px 11px" onClick="{{ toggleLang }}" aria-label="Language">{{ langBtn }}</button>
+    <button class="btn btn-ghost" style="font-size:13px;padding:6px 12px" onClick="{{ toggleLang }}" aria-label="Language">{{ langBtn }}</button>
     <button class="btn btn-secondary" disabled="{{ dataUnavailable }}" onClick="{{ openMatrix }}">{{ T.matrixBtn }}</button>
     <button class="btn btn-primary" onClick="{{ openDrawer }}">{{ T.studentBtn }}</button>
   </div>
@@ -41,32 +56,25 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
   </sc-if>
   <main style="max-width:1120px;margin:0 auto;padding:var(--space-6) var(--space-4) 0">
 
-    <section style="margin-bottom:var(--space-6)">
-      <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--space-4);justify-content:space-between">
-        <div>
+    <section style="display:flex;flex-wrap:wrap;gap:var(--space-3) var(--space-6);align-items:center;justify-content:space-between;padding:var(--space-3) var(--space-4);background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);margin-bottom:var(--space-6)">
+      <div style="display:flex;align-items:center;gap:12px;position:relative;flex-wrap:wrap">
+        <span style="font-size:12px;font-weight:600;color:var(--color-neutral-600);white-space:nowrap">{{ T.weekLabel }}</span>
+        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;background:var(--color-neutral-200);padding:3px;border-radius:var(--radius-md)">
+          <button class="btn btn-ghost" style="padding:4px 9px;min-width:30px;height:30px;border-radius:var(--radius-sm)" onClick="{{ weekPrev }}" aria-label="{{ T.prevWeek }}">←</button>
+          <button class="btn btn-secondary" style="min-width:180px;height:30px;font-feature-settings:'tnum';font-size:13px;font-weight:600;border:none;box-shadow:0 1px 2px rgba(0,0,0,0.06)" onClick="{{ togglePicker }}">{{ weekBtnLabel }}</button>
+          <button class="btn btn-ghost" style="padding:4px 9px;min-width:30px;height:30px;border-radius:var(--radius-sm)" onClick="{{ weekNext }}" aria-label="{{ T.nextWeek }}">→</button>
         </div>
-      </div>
-    </section>
-
-    <section style="display:flex;flex-wrap:wrap;gap:var(--space-4) var(--space-6);align-items:center;padding:var(--space-3) 0;border-top:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);margin-bottom:var(--space-6)">
-      <div style="display:flex;align-items:center;gap:10px;position:relative;flex-wrap:wrap">
-        <span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600);white-space:nowrap">{{ T.weekLabel }}</span>
-        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-          <button class="btn btn-ghost" style="padding:6px 11px" onClick="{{ weekPrev }}" aria-label="{{ T.prevWeek }}">←</button>
-          <button class="btn btn-secondary" style="min-width:180px;font-feature-settings:'tnum'" onClick="{{ togglePicker }}">{{ weekBtnLabel }}</button>
-          <button class="btn btn-ghost" style="padding:6px 11px" onClick="{{ weekNext }}" aria-label="{{ T.nextWeek }}">→</button>
-        </div>
-        <button class="btn btn-ghost" style="font-size:12px;padding:6px 11px;white-space:nowrap;flex-shrink:0" onClick="{{ backToThisWeek }}">{{ T.todayBtn }}</button>
+        <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px;white-space:nowrap;flex-shrink:0" onClick="{{ backToThisWeek }}">{{ T.todayBtn }}</button>
         <sc-if value="{{ pickerOpen }}" hint-placeholder-val="{{ false }}">
-          <div style="position:absolute;top:calc(100% + 8px);left:44px;z-index:45;width:288px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);padding:var(--space-3);animation:slideIn .15s ease-out">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-2)">
+          <div style="position:absolute;top:calc(100% + 8px);left:44px;z-index:45;width:288px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);padding:var(--space-4);animation:slideIn .15s ease-out">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3)">
               <button class="btn btn-ghost" style="padding:4px 9px" onClick="{{ monthPrev }}" aria-label="{{ T.prevMonth }}">←</button>
-              <span style="font-family:var(--font-heading);font-size:17px;font-feature-settings:'tnum'">{{ pickerTitle }}</span>
+              <span style="font-family:var(--font-heading);font-size:15px;font-weight:600;font-feature-settings:'tnum'">{{ pickerTitle }}</span>
               <button class="btn btn-ghost" style="padding:4px 9px" onClick="{{ monthNext }}" aria-label="{{ T.nextMonth }}">→</button>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px">
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px">
               <sc-for list="{{ pickerDows }}" as="d" hint-placeholder-count="7">
-                <div style="text-align:center;font-size:11px;color:var(--color-neutral-600)">{{ d }}</div>
+                <div style="text-align:center;font-size:11px;font-weight:600;color:var(--color-neutral-500)">{{ d }}</div>
               </sc-for>
             </div>
             <div style="display:flex;flex-direction:column;gap:2px">
@@ -78,37 +86,37 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
                 </button>
               </sc-for>
             </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-2);border-top:1px solid var(--color-divider);padding-top:var(--space-2)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-3);border-top:1px solid var(--color-divider);padding-top:var(--space-2)">
               <span class="text-muted" style="font-size:12px">{{ T.pickRowHint }}</span>
               <button class="btn btn-ghost" style="font-size:12px;padding:4px 9px" onClick="{{ backToThisWeek }}">{{ T.backToThisWeek }}</button>
             </div>
           </div>
         </sc-if>
       </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">{{ T.groupLabel }}</span>
-        <div style="display:flex;align-items:center;gap:16px">
-          <label style="display:inline-flex;align-items:center;gap:7px;font-size:13px;cursor:pointer"><input type="checkbox" checked="{{ gpIsA }}" onChange="{{ toggleGpA }}" style="width:15px;height:15px;accent-color:var(--color-accent-700);cursor:pointer"/>{{ T.groupA }}</label>
-          <label style="display:inline-flex;align-items:center;gap:7px;font-size:13px;cursor:pointer"><input type="checkbox" checked="{{ gpIsB }}" onChange="{{ toggleGpB }}" style="width:15px;height:15px;accent-color:var(--color-accent-700);cursor:pointer"/>{{ T.groupB }}</label>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:12px;font-weight:600;color:var(--color-neutral-600)">{{ T.groupLabel }}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:5px 12px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-full);cursor:pointer;transition:all .15s ease"><input type="checkbox" checked="{{ gpIsA }}" onChange="{{ toggleGpA }}" style="width:15px;height:15px;accent-color:var(--color-accent-700);cursor:pointer"/>{{ T.groupA }}</label>
+          <label style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:5px 12px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-full);cursor:pointer;transition:all .15s ease"><input type="checkbox" checked="{{ gpIsB }}" onChange="{{ toggleGpB }}" style="width:15px;height:15px;accent-color:var(--color-accent-700);cursor:pointer"/>{{ T.groupB }}</label>
         </div>
       </div>
     </section>
 
     <sc-if value="{{ noScope }}" hint-placeholder-val="{{ false }}">
-      <p class="text-muted" style="font-size:14px;padding:var(--space-8) 0;border:1px dashed var(--color-divider);border-radius:var(--radius-md);text-align:center">{{ T.noGroup }}</p>
+      <p class="text-muted" style="font-size:14px;padding:var(--space-8) 0;border:1px dashed var(--color-divider);border-radius:var(--radius-lg);text-align:center;background:var(--color-surface)">{{ T.noGroup }}</p>
     </sc-if>
     <sc-if value="{{ hasScope }}" hint-placeholder-val="{{ true }}">
     <section>
-      <div style="display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:baseline;justify-content:space-between;margin-bottom:var(--space-4)">
-        <h2 style="font-weight:400;font-size:26px;margin:0">{{ T.overviewTitle }}</h2>
-        <div style="display:flex;gap:var(--space-4);font-size:12px;color:var(--color-neutral-700);flex-wrap:wrap">
-          <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:14px;height:14px;background:var(--color-accent-300);border:1px solid var(--color-accent-700);border-radius:2px;display:block"></i>{{ T.legendAll }}</span>
-          <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:14px;height:14px;background:var(--color-accent-100);border:1px solid var(--color-accent-400);border-radius:2px;display:block"></i>{{ T.legendOk }}</span>
-          <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:14px;height:14px;border:1px dashed var(--color-divider);border-radius:2px;display:block"></i>{{ T.legendNo }}</span>
+      <div style="display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:center;justify-content:space-between;margin-bottom:var(--space-4)">
+        <h2 style="font-weight:700;font-size:20px;margin:0;letter-spacing:-0.02em">{{ T.overviewTitle }}</h2>
+        <div style="display:flex;gap:var(--space-3);font-size:12px;font-weight:500;color:var(--color-neutral-600);flex-wrap:wrap">
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;background:var(--color-surface);border-radius:var(--radius-full);border:1px solid var(--color-divider)"><i style="width:12px;height:12px;background:var(--color-accent-600);border-radius:3px;display:block"></i>{{ T.legendAll }}</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;background:var(--color-surface);border-radius:var(--radius-full);border:1px solid var(--color-divider)"><i style="width:12px;height:12px;background:var(--color-accent-100);border:1px solid var(--color-accent-300);border-radius:3px;display:block"></i>{{ T.legendOk }}</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;background:var(--color-surface);border-radius:var(--radius-full);border:1px solid var(--color-divider)"><i style="width:12px;height:12px;background:var(--color-neutral-100);border:1px dashed var(--color-divider);border-radius:3px;display:block"></i>{{ T.legendNo }}</span>
         </div>
       </div>
 
-      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px">
+      <div style="background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:var(--space-4);overflow-x:auto;-webkit-overflow-scrolling:touch">
         <div style="min-width:580px;display:flex;flex-direction:column;gap:3px;position:relative">
           <sc-if value="{{ todayInWeek }}" hint-placeholder-val="{{ false }}">
             <div style="{{ todayBandStyle }}"></div>
@@ -117,17 +125,17 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
             <div style="width:54px;flex:none"></div>
             <sc-for list="{{ days }}" as="d" hint-placeholder-count="7">
               <div style="{{ d.headStyle }}">
-                <div style="font-family:var(--font-heading);font-size:15px">{{ d.dow }}</div>
-                <div style="font-size:11px;font-feature-settings:'tnum';color:var(--color-neutral-600)">{{ d.md }}</div>
+                <div style="font-family:var(--font-heading);font-size:14px;font-weight:600">{{ d.dow }}</div>
+                <div style="font-size:11px;font-feature-settings:'tnum';color:var(--color-neutral-500)">{{ d.md }}</div>
                 <sc-if value="{{ d.today }}" hint-placeholder-val="{{ false }}">
-                  <div style="font-size:10px;letter-spacing:.06em;color:var(--color-neutral-900)">{{ d.todayTag }}</div>
+                  <div style="font-size:10px;font-weight:600;letter-spacing:.04em;color:var(--color-accent-800);background:var(--color-accent-200);border-radius:var(--radius-full);padding:1px 6px;display:inline-block;margin-top:2px">{{ d.todayTag }}</div>
                 </sc-if>
               </div>
             </sc-for>
           </div>
           <sc-for list="{{ rows }}" as="row" hint-placeholder-count="13">
             <div style="display:flex;gap:3px;align-items:stretch;position:relative;z-index:1">
-              <div style="width:54px;flex:none;font-size:11px;font-feature-settings:'tnum';color:var(--color-neutral-600);display:flex;align-items:center;justify-content:flex-end;padding-right:8px">{{ row.label }}</div>
+              <div style="width:54px;flex:none;font-size:11px;font-weight:500;font-feature-settings:'tnum';color:var(--color-neutral-500);display:flex;align-items:center;justify-content:flex-end;padding-right:8px">{{ row.label }}</div>
               <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="7">
                 <button style="{{ c.style }}" onMouseEnter="{{ c.hover }}" onClick="{{ c.pick }}" onFocus="{{ c.hover }}">{{ c.text }}</button>
               </sc-for>
@@ -135,10 +143,10 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
           </sc-for>
         </div>
       </div>
-      <div style="margin-top:var(--space-4);min-height:78px;border:1px solid var(--color-divider);border-radius:var(--radius-md);padding:var(--space-3)">
-        <div style="font-family:var(--font-heading);font-size:17px;margin-bottom:4px">{{ detailTitle }}</div>
-        <div style="font-size:13px;color:var(--color-accent-700)">{{ detailYes }}</div>
-        <div style="font-size:13px;color:var(--color-neutral-700);margin-top:2px">{{ detailNo }}</div>
+      <div style="margin-top:var(--space-4);min-height:78px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:var(--space-4)">
+        <div style="font-family:var(--font-heading);font-weight:700;font-size:16px;margin-bottom:6px;color:var(--color-text)">{{ detailTitle }}</div>
+        <div style="font-size:13px;font-weight:500;color:var(--color-accent-800);display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--color-accent-600)"></span>{{ detailYes }}</div>
+        <div style="font-size:13px;color:var(--color-neutral-600);margin-top:4px;display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--color-neutral-400)"></span>{{ detailNo }}</div>
       </div>
 
     </section>
@@ -160,24 +168,10 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
               <button style="{{ m.style }}" disabled="{{ busy }}" onClick="{{ m.pick }}">{{ m.name }}</button>
             </sc-for>
           </div>
-        </div>
-        <sc-if value="{{ needPin }}" hint-placeholder-val="{{ true }}">
-          <div class="field" style="margin-bottom:var(--space-3);border-top:1px solid var(--color-divider);padding-top:var(--space-3)">
-            <label>{{ T.pinLabel }}</label>
-            <div style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
-              <input class="input" style="max-width:240px;letter-spacing:.1em;font-feature-settings:'tnum'" type="password" autoComplete="current-password" maxLength="128" placeholder="••••" value="{{ pinInput }}" onChange="{{ setPin }}"/>
-              <button class="btn btn-primary" disabled="{{ authDisabled }}" onClick="{{ unlock }}">{{ T.unlock }}</button>
-              <span class="text-muted" style="font-size:12px">{{ pinHint }}</span>
-            </div>
-          </div>
-        </sc-if>
-        <sc-if value="{{ unlocked }}" hint-placeholder-val="{{ false }}">
-<button class="btn btn-ghost" disabled="{{ busy }}" onClick="{{ logout }}">{{ logoutLabel }}</button>
         <div class="seg" style="margin:var(--space-2) 0 var(--space-4)">
           <label class="seg-opt"><input type="radio" name="tab" checked="{{ tabIsTemp }}" onChange="{{ setTabTemp }}"/>{{ T.tabTemp }}</label>
           <label class="seg-opt"><input type="radio" name="tab" checked="{{ tabIsReg }}" onChange="{{ setTabReg }}"/>{{ T.tabReg }}</label>
         </div>
-        </sc-if>
         <fieldset disabled="{{ editDisabled }}" style="border:0;padding:0;margin:0;min-width:0">
 <sc-if value="{{ tabTemp }}" hint-placeholder-val="{{ false }}">
         <div class="field" style="margin-bottom:var(--space-3)">
@@ -263,27 +257,23 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
             <button style="{{ t.style }}" onClick="{{ t.pick }}">{{ t.label }}</button>
           </sc-for>
         </div>
-        <div style="overflow:auto;flex:1;min-height:0">
-          <table class="table" style="min-width:520px">
-            <thead>
-              <tr>
-                <th style="position:sticky;left:0;background:var(--color-surface)">{{ T.slotCol }}</th>
-                <sc-for list="{{ matrixMembers }}" as="m" hint-placeholder-count="7">
-                  <th style="text-align:center">{{ m.name }}</th>
-                </sc-for>
-              </tr>
-            </thead>
-            <tbody>
-              <sc-for list="{{ matrixRows }}" as="r" hint-placeholder-count="13">
-                <tr>
-                  <td style="font-feature-settings:'tnum';font-size:12px;white-space:nowrap;position:sticky;left:0;background:var(--color-surface)">{{ r.label }}</td>
-                  <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7">
-                    <td style="{{ c.style }}" title="{{ c.title }}">{{ c.mark }}</td>
-                  </sc-for>
-                </tr>
+        <div style="overflow:auto;flex:1;min-height:0;border:1px solid var(--color-divider);border-radius:var(--radius-md)">
+          <div style="min-width:540px;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;background:var(--color-surface-subtle);border-bottom:1px solid var(--color-divider);position:sticky;top:0;z-index:2">
+              <div style="width:105px;flex:none;font-size:12px;font-weight:600;color:var(--color-neutral-600);padding:9px 12px;position:sticky;left:0;background:var(--color-surface-subtle);z-index:3">{{ T.slotCol }}</div>
+              <sc-for list="{{ matrixMembers }}" as="m" hint-placeholder-count="7">
+                <div style="flex:1;min-width:56px;text-align:center;font-size:12px;font-weight:600;color:var(--color-neutral-700);padding:9px 4px">{{ m.name }}</div>
               </sc-for>
-            </tbody>
-          </table>
+            </div>
+            <sc-for list="{{ matrixRows }}" as="r" hint-placeholder-count="13">
+              <div style="display:flex;align-items:center;border-bottom:1px solid var(--color-divider);min-height:34px">
+                <div style="width:105px;flex:none;font-feature-settings:'tnum';font-size:12px;white-space:nowrap;padding:7px 12px;color:var(--color-neutral-600);position:sticky;left:0;background:var(--color-surface);z-index:1">{{ r.label }}</div>
+                <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7">
+                  <div style="{{ c.style }}" title="{{ c.title }}">{{ c.mark }}</div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
         </div>
         <p class="text-muted" style="font-size:12px;margin:var(--space-3) 0 0">〇 {{ T.mAvail }}　✕ {{ T.mBusy }}　<span style="color:var(--color-accent-700)">！</span> {{ T.mLeave }}　<span style="color:var(--color-accent-700)">＋</span> {{ T.mOpen }}</p>
       </div>
@@ -291,11 +281,11 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
   </sc-if>
 
   <sc-if value="{{ picksAny }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed;left:0;right:0;bottom:0;z-index:55;display:flex;justify-content:center;padding:var(--space-3);pointer-events:none">
-      <div style="pointer-events:auto;display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-4);background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);padding:10px var(--space-4);animation:slideIn .18s ease-out;max-width:min(960px,100%)">
+    <div style="position:fixed;left:0;right:0;bottom:0;z-index:55;display:flex;justify-content:center;padding:var(--space-4);pointer-events:none">
+      <div style="pointer-events:auto;display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-4);background:rgba(255,255,255,0.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--color-divider);border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);padding:10px var(--space-4);animation:slideIn .18s ease-out;max-width:min(960px,100%)">
         <div style="display:flex;flex-direction:column;min-width:0;gap:2px">
-          <span style="font-family:var(--font-heading);font-size:15px;font-feature-settings:'tnum'">{{ pickSummary }}</span>
-          <span style="font-size:12px;color:var(--color-neutral-600);font-feature-settings:'tnum'">{{ pickDetail }}</span>
+          <span style="font-family:var(--font-heading);font-weight:700;font-size:15px;font-feature-settings:'tnum'">{{ pickSummary }}</span>
+          <span style="font-size:12px;color:var(--color-neutral-500);font-feature-settings:'tnum'">{{ pickDetail }}</span>
         </div>
         <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-left:auto">
           <button class="btn btn-primary" onClick="{{ addToGcal }}">{{ T.gcal }}</button>
@@ -572,8 +562,64 @@ class Component extends DCLogic {
   /* — actions — */
   flash(msg) { this.setState({ toast: msg }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: '' }), 2200); }
   copy(text, msg) {
-    try { navigator.clipboard.writeText(text); } catch (e) {}
-    this.flash(msg);
+    const fallback = (str) => {
+      let ok = false;
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = str;
+        ta.style.position = 'fixed';
+        ta.style.top = '0';
+        ta.style.left = '-9999px';
+        ta.style.width = '2em';
+        ta.style.height = '2em';
+        ta.style.padding = '0';
+        ta.style.border = 'none';
+        ta.style.outline = 'none';
+        ta.style.boxShadow = 'none';
+        ta.style.background = 'transparent';
+        ta.setAttribute('readonly', '');
+        document.body.appendChild(ta);
+
+        const isiOS = /ipad|ipod|iphone/i.test(navigator.userAgent);
+        if (isiOS) {
+          const range = document.createRange();
+          range.selectNodeContents(ta);
+          const sel = window.getSelection();
+          if (sel) {
+            sel.removeAllRanges();
+            sel.addRange(range);
+          }
+          ta.setSelectionRange(0, str.length);
+        } else {
+          ta.focus();
+          ta.select();
+        }
+
+        ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch (e) {
+        ok = false;
+      }
+      return ok;
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => {
+        this.flash(msg);
+      }).catch(() => {
+        if (fallback(text)) {
+          this.flash(msg);
+        } else {
+          window.prompt(this.state.lang === 'zh' ? '請手動複製邀請文案：' : 'Please copy invite text manually:', text);
+        }
+      });
+    } else {
+      if (fallback(text)) {
+        this.flash(msg);
+      } else {
+        window.prompt(this.state.lang === 'zh' ? '請手動複製邀請文案：' : 'Please copy invite text manually:', text);
+      }
+    }
   }
 
   monday(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
@@ -616,10 +662,10 @@ class Component extends DCLogic {
   }
 
   baseCellStyle(c, need, total) {
-    const base = { border: 'none', borderRadius: 'var(--radius-sm)', flex: 1, minWidth: 0, height: '30px', cursor: 'pointer', font: 'inherit', fontSize: '11px', fontFeatureSettings: "'tnum'", display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform .1s' };
-    if (total > 0 && c.count === total) return { ...base, background: 'var(--color-accent-300)', boxShadow: 'inset 0 0 0 1px var(--color-accent-700)', color: 'var(--color-accent-900)' };
-    if (c.count >= need && c.count > 0) return { ...base, background: 'var(--color-accent-100)', boxShadow: 'inset 0 0 0 1px var(--color-accent-400)', color: 'var(--color-accent-800)' };
-    return { ...base, background: 'transparent', boxShadow: 'inset 0 0 0 1px var(--color-divider)', color: 'var(--color-neutral-500)', opacity: 0.55 };
+    const base = { border: 'none', borderRadius: 'var(--radius-sm)', flex: 1, minWidth: 0, height: '32px', cursor: 'pointer', font: 'inherit', fontSize: '12px', fontWeight: '600', fontFeatureSettings: "'tnum'", display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .12s ease' };
+    if (total > 0 && c.count === total) return { ...base, background: 'var(--color-accent-600)', color: '#ffffff', boxShadow: '0 2px 5px rgba(16, 185, 129, 0.3)' };
+    if (c.count >= need && c.count > 0) return { ...base, background: 'var(--color-accent-100)', boxShadow: 'inset 0 0 0 1px var(--color-accent-300)', color: 'var(--color-accent-800)' };
+    return { ...base, background: 'var(--color-surface-subtle)', boxShadow: 'inset 0 0 0 1px var(--color-divider)', color: 'var(--color-neutral-400)', opacity: 0.5 };
   }
 
   renderVals() {
@@ -633,17 +679,17 @@ class Component extends DCLogic {
         date: d, dow: this.dows[d.getDay()], dowShort: L.dowsShort[d.getDay()], md: (d.getMonth() + 1) + '/' + d.getDate(), weekend: we, today: isToday,
         todayTag: isToday ? L.today : '',
         headStyle: isToday
-          ? { flex: 1, minWidth: 0, textAlign: 'center', paddingBottom: '6px', borderBottom: '1px solid var(--color-accent-700)', color: 'var(--color-accent-900)' }
-          : { flex: 1, minWidth: 0, textAlign: 'center', paddingBottom: '6px', borderBottom: '1px solid var(--color-divider)', opacity: we ? 0.42 : 1 },
-        cardStyle: { borderTop: isToday ? '2px solid var(--color-accent-700)' : '1px solid var(--color-divider)', paddingTop: 'var(--space-3)', opacity: we && !isToday ? 0.5 : 1 }
+          ? { flex: 1, minWidth: 0, textAlign: 'center', paddingBottom: '8px', borderBottom: '2px solid var(--color-accent-600)', color: 'var(--color-accent-800)' }
+          : { flex: 1, minWidth: 0, textAlign: 'center', paddingBottom: '8px', borderBottom: '1px solid var(--color-divider)', opacity: we ? 0.45 : 1 },
+        cardStyle: { borderTop: isToday ? '2px solid var(--color-accent-600)' : '1px solid var(--color-divider)', paddingTop: 'var(--space-3)', opacity: we && !isToday ? 0.5 : 1 }
       };
     });
 
     const cellStyle = (c, we, picked, isToday) => {
-      if (picked) return { border: 'none', borderRadius: 'var(--radius-sm)', flex: 1, minWidth: 0, height: '30px', cursor: 'pointer', font: 'inherit', fontSize: '14px', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-accent-700)', color: 'var(--color-neutral-100)', boxShadow: 'inset 0 0 0 1px var(--color-accent-900)' };
-      const dim = (s) => (we && !isToday) ? { ...s, opacity: Math.max(0.55, (s.opacity ?? 1) * 0.42) } : s;
+      if (picked) return { border: 'none', borderRadius: 'var(--radius-sm)', flex: 1, minWidth: 0, height: '32px', cursor: 'pointer', font: 'inherit', fontSize: '13px', fontWeight: '700', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-accent-800)', color: '#ffffff', boxShadow: '0 0 0 2px var(--color-accent-900)' };
+      const dim = (s) => (we && !isToday) ? { ...s, opacity: Math.max(0.45, (s.opacity ?? 1) * 0.45) } : s;
       const s = dim(this.baseCellStyle(c, need, total));
-      return (isToday && s.background === 'transparent') ? { ...s, color: 'var(--color-neutral-900)' } : s;
+      return (isToday && s.background === 'var(--color-surface-subtle)') ? { ...s, color: 'var(--color-neutral-700)' } : s;
     };
 
     const rows = hours.map(h => ({
@@ -710,7 +756,7 @@ class Component extends DCLogic {
     });
 
     const sel = S.sel;
-    const mChip = (on) => ({ cursor: 'pointer', font: 'inherit', fontSize: '13px', padding: '6px 12px', borderRadius: 'var(--radius-md)', background: on ? 'var(--color-accent-100)' : 'transparent', border: '1px solid ' + (on ? 'var(--color-accent)' : 'var(--color-divider)'), color: on ? 'var(--color-accent-800)' : 'inherit' });
+    const mChip = (on) => ({ cursor: 'pointer', font: 'inherit', fontSize: '13px', fontWeight: on ? '600' : '500', padding: '6px 14px', borderRadius: 'var(--radius-full)', background: on ? 'var(--color-accent-100)' : 'var(--color-surface)', border: '1px solid ' + (on ? 'var(--color-accent-600)' : 'var(--color-divider)'), color: on ? 'var(--color-accent-800)' : 'var(--color-text)', boxShadow: on ? '0 1px 3px rgba(5,150,105,0.15)' : 'none', transition: 'all .15s ease' });
 
     const fs = S.startAt ? new Date(S.startAt) : null, fe = S.endAt ? new Date(S.endAt) : null;
     const spanDays = fs && fe && fe > fs ? Math.round((new Date(this.iso(fe) + 'T00:00') - new Date(this.iso(fs) + 'T00:00')) / 86400000) : 0;
@@ -740,7 +786,12 @@ class Component extends DCLogic {
           return {
             mark: temp ? (s.ok ? '＋' : '！') : (s.ok ? '〇' : '✕'),
             title: s.ov ? (s.ov.type === 'off' ? L.tmpLeave : L.tmpFree) + (s.ov.note ? '：' + s.ov.note : '') : '',
-            style: { textAlign: 'center', fontFeatureSettings: "'tnum'", color: temp ? 'var(--color-accent-700)' : (s.ok ? 'var(--color-text)' : 'var(--color-neutral-400)'), fontWeight: temp ? 600 : 400 }
+            style: {
+              flex: 1, minWidth: '56px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFeatureSettings: "'tnum'", fontSize: '14px', padding: '6px 4px',
+              color: temp ? 'var(--color-accent-700)' : (s.ok ? 'var(--color-accent-800)' : 'var(--color-neutral-400)'),
+              fontWeight: temp || s.ok ? 600 : 400
+            }
           };
         })
       };
@@ -826,9 +877,9 @@ class Component extends DCLogic {
           position: 'absolute', top: '-6px', bottom: '-6px', zIndex: 0,
           left: 'calc(57px + ' + i + ' * (' + col + ' + 3px))',
           width: 'calc(' + col + ')',
-          background: 'rgba(20,16,12,0.05)',
-          boxShadow: '0 0 0 2.5px var(--color-accent-900)',
-          borderRadius: 'var(--radius-sm)',
+          background: 'rgba(16, 185, 129, 0.05)',
+          boxShadow: '0 0 0 1.5px rgba(16, 185, 129, 0.35)',
+          borderRadius: 'var(--radius-md)',
           pointerEvents: 'none',
           animation: 'todayBreathe 3.4s ease-in-out infinite'
         };
@@ -845,29 +896,32 @@ class Component extends DCLogic {
       stop: (e) => e.stopPropagation(),
       drawerOpen: S.drawerOpen, matrixOpen: S.matrixOpen, toast: S.toast,
       drawerStyle: { width: 'min(520px,100%)', maxHeight: '92vh', overflow: 'auto', background: 'var(--color-surface)', borderTop: '1px solid var(--color-divider)', borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0', padding: 'var(--space-4)', boxShadow: 'var(--shadow-lg)', animation: 'slideIn .2s ease-out', marginBottom: 0 },
-      matrixStyle: { width: 'min(880px,100%)', maxHeight: '88vh', display: 'flex', flexDirection: 'column', background: 'var(--color-surface)', border: '1px solid var(--color-divider)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)', boxShadow: 'var(--shadow-lg)' },
-      memberChips: this.members.map(m => ({ name: this.nameOf(m), style: mChip(S.who === m.id), pick: async () => { if (this.store.state.busy) return; await this.store.logout(); this.setState({ who: m.id, pinInput: '', verified: [] }); } })),
-      needPin: !S.verified.includes(S.who),
-      unlocked: S.verified.includes(S.who),
+      memberChips: this.members.map(m => ({
+        name: this.nameOf(m),
+        style: mChip(S.who === m.id),
+        pick: () => {
+          if (this.store.state.busy) return;
+          this.store.setMember(m.id);
+          this.setState({ who: m.id, verified: [m.id] });
+        }
+      })),
+      needPin: false,
+      unlocked: true,
       tabIsTemp: S.tab === 'temp', tabIsReg: S.tab === 'reg',
-      tabTemp: S.verified.includes(S.who) && S.tab === 'temp',
-      tabReg: S.verified.includes(S.who) && S.tab === 'reg',
+      tabTemp: S.tab === 'temp',
+      tabReg: S.tab === 'reg',
       setTabTemp: () => this.setState({ tab: 'temp' }),
       setTabReg: () => this.setState({ tab: 'reg' }),
-      pinInput: S.pinInput,
+      pinInput: '',
       showSyncNotice: !S.connected && ['offline', 'failed', 'config'].includes(this.store?.state.status) && !S.drawerOpen,
       syncStatus: this.store ? this.store.text(S.lang) : S.syncStatus,
       dataUnavailable: !S.dataLoaded, busy: S.busy, authDisabled: S.busy || !S.connected,
       editDisabled: S.busy || !S.connected,
       logoutLabel: S.lang === 'zh' ? '登出' : 'Sign out',
-      logout: () => this.store.logout(),
-      pinHint: L.pinHint(),
-      setPin: (e) => this.setState({ pinInput: e.target.value }),
-      unlock: async () => {
-        const ok = await this.store.login(S.who, S.pinInput);
-        this.setState({pinInput:''});
-        if (!ok) this.flash(this.store.text(S.lang));
-      },
+      logout: () => { this.store.logout(); this.setState({ who: '' }); },
+      pinHint: '',
+      setPin: () => {},
+      unlock: () => {},
       regDays: dayMeta.map(dm => ({ label: dm.dowShort, style: { flex: 1, minWidth: 0, textAlign: 'center', fontFamily: 'var(--font-heading)', fontSize: '13px', paddingBottom: '4px', opacity: dm.weekend ? 0.5 : 1 } })),
       regRows: hours.map(h => ({
         label: this.hm(h),

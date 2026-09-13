@@ -1,11 +1,6 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function owner(mid) {
-      return request.auth != null
-        && exists(/databases/$(database)/documents/memberAccess/$(request.auth.uid))
-        && get(/databases/$(database)/documents/memberAccess/$(request.auth.uid)).data.memberId == mid;
-    }
     function hours(h) {
       return h is list && h.size() <= 13 && h.toSet().size() == h.size()
         && h.hasOnly([8,9,10,11,12,13,14,15,16,17,18,19,20]);
@@ -18,9 +13,6 @@ service cloud.firestore {
     }
     match /members/{mid} { allow read: if true; }
     match /scheduleDefaults/{mid} { allow read: if true; }
-    match /memberAccess/{uid} {
-      allow get: if request.auth != null && request.auth.uid == uid;
-    }
     match /availability/{mid} {
       allow read: if true;
       function valid() {
@@ -29,19 +21,20 @@ service cloud.firestore {
           && request.resource.data.version is int
           && request.resource.data.updatedAt == request.time;
       }
-      allow create: if owner(mid) && valid() && request.resource.data.version == 1;
-      allow update: if owner(mid) && valid() && request.resource.data.version == resource.data.version + 1;
+      allow create: if valid() && request.resource.data.version == 1;
+      allow update: if valid() && request.resource.data.version == resource.data.version + 1;
     }
     match /overrides/{id} {
       allow read: if true;
-      allow create: if owner(request.resource.data.member)
+      allow create: if request.resource.data.member in ['ta','fe','jy','yl','sx','yx','dx']
         && request.resource.data.keys().hasOnly(['member','startAt','endAt','type','note','createdAt'])
         && request.resource.data.startAt is timestamp && request.resource.data.endAt is timestamp
         && request.resource.data.startAt < request.resource.data.endAt
         && request.resource.data.type in ['on','off']
         && request.resource.data.note is string && request.resource.data.note.size() <= 15
         && request.resource.data.createdAt == request.time;
-      allow delete: if owner(resource.data.member);
+      allow delete: if true;
     }
   }
 }
+
