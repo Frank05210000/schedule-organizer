@@ -28,6 +28,7 @@
 "https://unpkg.com/@babel/standalone@7.29.0/babel.min.js": "/vendor/babel.js"
 };</script>
 <script src="./support.js"></script>
+<script src="./calendar-export.js"></script>
 </head>
 <body>
 <x-dc>
@@ -38,6 +39,46 @@
 body { margin: 0; -webkit-text-size-adjust: 100%; }
 @keyframes slideIn { from { transform: translateY(16px); opacity: 0 } to { transform: none; opacity: 1 } }
 @keyframes todayBreathe { 0%, 100% { opacity: .7 } 50% { opacity: 1 } }
+
+@media (max-width: 680px) {
+  .nav {
+    padding: 8px 12px !important;
+    gap: 8px !important;
+  }
+  .nav-brand {
+    font-size: 15px !important;
+    gap: 6px !important;
+  }
+  .nav-brand span:first-child {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 14px !important;
+  }
+  .nav .btn {
+    font-size: 12px !important;
+    padding: 5px 8px !important;
+  }
+  main.main-content {
+    padding: 12px 10px 0 !important;
+  }
+  .control-section {
+    padding: 10px 12px !important;
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+  }
+  .calendar-card {
+    padding: 8px 6px !important;
+    border-radius: var(--radius-md) !important;
+  }
+  .detail-card {
+    padding: 12px !important;
+    margin-top: 10px !important;
+  }
+  .picker-popover {
+    left: 0 !important;
+    max-width: calc(100vw - 28px) !important;
+  }
+}
 </style>
 </helmet>
 <div style="min-height:100vh;background:var(--color-bg);color:var(--color-text);padding-bottom:64px">
@@ -49,15 +90,16 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
     </div>
     <button class="btn btn-ghost" style="font-size:13px;padding:6px 12px" onClick="{{ toggleLang }}" aria-label="Language">{{ langBtn }}</button>
     <button class="btn btn-secondary" disabled="{{ dataUnavailable }}" onClick="{{ openMatrix }}">{{ T.matrixBtn }}</button>
+    <button class="btn btn-secondary" disabled="{{ exportUnavailable }}" onClick="{{ openExport }}">{{ exportLabel }}</button>
     <button class="btn btn-primary" onClick="{{ openDrawer }}">{{ T.studentBtn }}</button>
   </div>
 
   <sc-if value="{{ showSyncNotice }}" hint-placeholder-val="{{ false }}">
     <div role="status" aria-live="polite" style="position:fixed;bottom:12px;left:12px;right:12px;z-index:60;padding:10px 14px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-md)">{{ syncStatus }}</div>
   </sc-if>
-  <main style="max-width:1120px;margin:0 auto;padding:var(--space-6) var(--space-4) 0">
+  <main class="main-content" style="max-width:1120px;margin:0 auto;padding:var(--space-6) var(--space-4) 0">
 
-    <section style="display:flex;flex-wrap:wrap;gap:var(--space-3) var(--space-6);align-items:center;justify-content:space-between;padding:var(--space-3) var(--space-4);background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);margin-bottom:var(--space-6)">
+    <section class="control-section" style="display:flex;flex-wrap:wrap;gap:var(--space-3) var(--space-6);align-items:center;justify-content:space-between;padding:var(--space-3) var(--space-4);background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);margin-bottom:var(--space-6)">
       <div style="display:flex;align-items:center;gap:12px;position:relative;flex-wrap:wrap">
         <span style="font-size:12px;font-weight:600;color:var(--color-neutral-600);white-space:nowrap">{{ T.weekLabel }}</span>
         <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;background:var(--color-neutral-200);padding:3px;border-radius:var(--radius-md)">
@@ -67,7 +109,7 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
         </div>
         <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px;white-space:nowrap;flex-shrink:0" onClick="{{ backToThisWeek }}">{{ T.todayBtn }}</button>
         <sc-if value="{{ pickerOpen }}" hint-placeholder-val="{{ false }}">
-          <div style="position:absolute;top:calc(100% + 8px);left:44px;z-index:45;width:288px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);padding:var(--space-4);animation:slideIn .15s ease-out">
+          <div class="picker-popover" style="position:absolute;top:calc(100% + 8px);left:44px;z-index:45;width:288px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);padding:var(--space-4);animation:slideIn .15s ease-out">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3)">
               <button class="btn btn-ghost" style="padding:4px 9px" onClick="{{ monthPrev }}" aria-label="{{ T.prevMonth }}">←</button>
               <span style="font-family:var(--font-heading);font-size:15px;font-weight:600;font-feature-settings:'tnum'">{{ pickerTitle }}</span>
@@ -94,11 +136,15 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
           </div>
         </sc-if>
       </div>
-      <div style="display:flex;align-items:center;gap:12px">
-        <span style="font-size:12px;font-weight:600;color:var(--color-neutral-600)">{{ T.groupLabel }}</span>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:12px;font-weight:600;color:var(--color-neutral-600)">{{ T.groupLabel }}</span>
           <label style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:5px 12px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-full);cursor:pointer;transition:all .15s ease"><input type="checkbox" checked="{{ gpIsA }}" onChange="{{ toggleGpA }}" style="width:15px;height:15px;accent-color:var(--color-accent-700);cursor:pointer"/>{{ T.groupA }}</label>
           <label style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:5px 12px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-full);cursor:pointer;transition:all .15s ease"><input type="checkbox" checked="{{ gpIsB }}" onChange="{{ toggleGpB }}" style="width:15px;height:15px;accent-color:var(--color-accent-700);cursor:pointer"/>{{ T.groupB }}</label>
+        </div>
+        <div class="seg" style="height:32px">
+          <label class="seg-opt"><input type="radio" name="wkd" checked="{{ isWeekdays }}" onChange="{{ setShowWeekdays }}"/>{{ T.scopeWeekdays }}</label>
+          <label class="seg-opt"><input type="radio" name="wkd" checked="{{ isFullWeek }}" onChange="{{ setShowFullWeek }}"/>{{ T.scopeFullWeek }}</label>
         </div>
       </div>
     </section>
@@ -117,13 +163,13 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
         </div>
       </div>
 
-      <div style="background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:var(--space-4);overflow-x:auto;-webkit-overflow-scrolling:touch">
-        <div style="min-width:580px;display:flex;flex-direction:column;gap:3px;position:relative">
+      <div class="calendar-card" style="background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:var(--space-4);overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <div style="{{ calendarGridStyle }}">
           <sc-if value="{{ todayInWeek }}" hint-placeholder-val="{{ false }}">
             <div style="{{ todayBandStyle }}"></div>
           </sc-if>
           <div style="display:flex;gap:3px;position:relative;z-index:1">
-            <div style="width:54px;flex:none"></div>
+            <div style="{{ timeColHeadStyle }}"></div>
             <sc-for list="{{ days }}" as="d" hint-placeholder-count="7">
               <div style="{{ d.headStyle }}">
                 <div style="font-family:var(--font-heading);font-size:14px;font-weight:600">{{ d.dow }}</div>
@@ -136,7 +182,12 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
           </div>
           <sc-for list="{{ rows }}" as="row" hint-placeholder-count="13">
             <div style="display:flex;gap:3px;align-items:stretch;position:relative;z-index:1">
-              <div style="width:54px;flex:none;font-size:11px;font-weight:500;font-feature-settings:'tnum';color:var(--color-neutral-500);display:flex;align-items:center;justify-content:flex-end;padding-right:8px">{{ row.label }}</div>
+              <div style="{{ row.labelColStyle }}">
+                <span style="{{ row.timeTopStyle }}">{{ row.timeStart }}</span>
+                <sc-if value="{{ row.isLast }}" hint-placeholder-val="{{ false }}">
+                  <span style="{{ row.timeBottomStyle }}">{{ row.timeEnd }}</span>
+                </sc-if>
+              </div>
               <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="7">
                 <button style="{{ c.style }}" onMouseEnter="{{ c.hover }}" onClick="{{ c.pick }}" onFocus="{{ c.hover }}">{{ c.text }}</button>
               </sc-for>
@@ -144,7 +195,7 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
           </sc-for>
         </div>
       </div>
-      <div style="margin-top:var(--space-4);min-height:78px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:var(--space-4)">
+      <div class="detail-card" style="margin-top:var(--space-4);min-height:78px;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:var(--space-4)">
         <div style="font-family:var(--font-heading);font-weight:700;font-size:16px;margin-bottom:6px;color:var(--color-text)">{{ detailTitle }}</div>
         <div style="font-size:13px;font-weight:500;color:var(--color-accent-800);display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--color-accent-600)"></span>{{ detailYes }}</div>
         <div style="font-size:13px;color:var(--color-neutral-600);margin-top:4px;display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--color-neutral-400)"></span>{{ detailNo }}</div>
@@ -169,6 +220,7 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
               <button style="{{ m.style }}" disabled="{{ busy }}" onClick="{{ m.pick }}">{{ m.name }}</button>
             </sc-for>
           </div>
+        </div>
         <div class="seg" style="margin:var(--space-2) 0 var(--space-4)">
           <label class="seg-opt"><input type="radio" name="tab" checked="{{ tabIsTemp }}" onChange="{{ setTabTemp }}"/>{{ T.tabTemp }}</label>
           <label class="seg-opt"><input type="radio" name="tab" checked="{{ tabIsReg }}" onChange="{{ setTabReg }}"/>{{ T.tabReg }}</label>
@@ -228,8 +280,13 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
               </sc-for>
             </div>
             <sc-for list="{{ regRows }}" as="r" hint-placeholder-count="13">
-              <div style="display:flex;gap:3px">
-                <div style="width:46px;flex:none;font-size:11px;font-feature-settings:'tnum';color:var(--color-neutral-600);display:flex;align-items:center;justify-content:flex-end;padding-right:6px">{{ r.label }}</div>
+              <div style="display:flex;gap:3px;align-items:stretch">
+                <div style="{{ r.labelColStyle }}">
+                  <span style="{{ r.timeTopStyle }}">{{ r.timeStart }}</span>
+                  <sc-if value="{{ r.isLast }}" hint-placeholder-val="{{ false }}">
+                    <span style="{{ r.timeBottomStyle }}">{{ r.timeEnd }}</span>
+                  </sc-if>
+                </div>
                 <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7">
                   <button style="{{ c.style }}" onClick="{{ c.toggle }}"></button>
                 </sc-for>
@@ -249,34 +306,67 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
   <sc-if value="{{ matrixOpen }}" hint-placeholder-val="{{ false }}">
     <div class="dialog-backdrop" style="padding:var(--space-3);z-index:50" onClick="{{ closeMatrix }}">
       <div style="{{ matrixStyle }}" onClick="{{ stop }}">
-        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap">
-          <h3 style="margin:0;font-weight:400">{{ T.matrixTitle }}</h3>
-          <button class="btn btn-ghost" onClick="{{ closeMatrix }}">{{ T.close }}</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap;padding-bottom:var(--space-3);border-bottom:1px solid var(--color-divider)">
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:var(--color-accent-100);color:var(--color-accent-700);border-radius:var(--radius-sm);font-size:14px">📊</span>
+              <h3 style="margin:0;font-family:var(--font-heading);font-weight:700;font-size:18px;color:var(--color-text)">{{ T.matrixTitle }}</h3>
+            </div>
+            <span style="font-size:12px;color:var(--color-neutral-500);font-feature-settings:'tnum'">{{ matrixSubtitle }}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px;display:inline-flex;align-items:center;gap:6px" onClick="{{ copyMatrixDay }}">📋 {{ T.copyDayBtn }}</button>
+            <button class="btn btn-ghost" style="padding:6px 12px;font-size:13px" onClick="{{ closeMatrix }}">{{ T.close }}</button>
+          </div>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin:var(--space-3) 0">
+
+        <div style="display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:var(--space-3) 0;flex-shrink:0">
           <sc-for list="{{ dayTabs }}" as="t" hint-placeholder-count="7">
-            <button style="{{ t.style }}" onClick="{{ t.pick }}">{{ t.label }}</button>
+            <button style="{{ t.style }}" onClick="{{ t.pick }}">
+              <span>{{ t.label }}</span>
+              <sc-if value="{{ t.today }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:10px;background:rgba(255,255,255,0.35);padding:1px 6px;border-radius:var(--radius-full);line-height:1.2;font-weight:700">今日</span>
+              </sc-if>
+            </button>
           </sc-for>
         </div>
-        <div style="overflow:auto;flex:1;min-height:0;border:1px solid var(--color-divider);border-radius:var(--radius-md)">
-          <div style="min-width:540px;display:flex;flex-direction:column">
-            <div style="display:flex;align-items:center;background:var(--color-surface-subtle);border-bottom:1px solid var(--color-divider);position:sticky;top:0;z-index:2">
-              <div style="width:105px;flex:none;font-size:12px;font-weight:600;color:var(--color-neutral-600);padding:9px 12px;position:sticky;left:0;background:var(--color-surface-subtle);z-index:3">{{ T.slotCol }}</div>
+
+        <div style="overflow:auto;flex:1;min-height:0;border:1px solid var(--color-divider);border-radius:var(--radius-lg);background:var(--color-surface);box-shadow:inset 0 1px 2px rgba(0,0,0,0.02)">
+          <div style="min-width:640px;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;background:var(--color-surface-subtle);border-bottom:1px solid var(--color-divider);position:sticky;top:0;z-index:3">
+              <div style="width:105px;flex:none;font-size:12px;font-weight:700;color:var(--color-neutral-700);padding:10px 12px;position:sticky;left:0;background:var(--color-surface-subtle);z-index:4;border-right:1px solid var(--color-divider)">{{ T.slotCol }}</div>
+              <div style="width:90px;flex:none;text-align:center;font-size:12px;font-weight:700;color:var(--color-neutral-700);padding:10px 6px;border-right:1px solid var(--color-divider)">{{ T.countCol }}</div>
               <sc-for list="{{ matrixMembers }}" as="m" hint-placeholder-count="7">
-                <div style="flex:1;min-width:56px;text-align:center;font-size:12px;font-weight:600;color:var(--color-neutral-700);padding:9px 4px">{{ m.name }}</div>
+                <div style="flex:1;min-width:64px;text-align:center;padding:8px 4px;border-right:1px solid var(--color-divider)">
+                  <div style="font-size:12px;font-weight:600;color:var(--color-text)">{{ m.name }}</div>
+                  <span style="display:inline-block;font-size:10px;padding:1px 6px;border-radius:var(--radius-full);background:var(--color-neutral-200);color:var(--color-neutral-700);margin-top:2px;font-weight:500">{{ m.gpLabel }}</span>
+                </div>
               </sc-for>
             </div>
             <sc-for list="{{ matrixRows }}" as="r" hint-placeholder-count="13">
-              <div style="display:flex;align-items:center;border-bottom:1px solid var(--color-divider);min-height:34px">
-                <div style="width:105px;flex:none;font-feature-settings:'tnum';font-size:12px;white-space:nowrap;padding:7px 12px;color:var(--color-neutral-600);position:sticky;left:0;background:var(--color-surface);z-index:1">{{ r.label }}</div>
+              <div style="display:flex;align-items:center;border-bottom:1px solid var(--color-divider);min-height:36px">
+                <div style="width:105px;flex:none;font-feature-settings:'tnum';font-size:12px;font-weight:500;white-space:nowrap;padding:8px 12px;color:var(--color-neutral-700);position:sticky;left:0;background:var(--color-surface);z-index:1;border-right:1px solid var(--color-divider)">{{ r.label }}</div>
+                <div style="width:90px;flex:none;text-align:center;padding:6px;border-right:1px solid var(--color-divider)">
+                  <span style="{{ r.countBadgeStyle }}">{{ r.countText }}</span>
+                </div>
                 <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7">
-                  <div style="{{ c.style }}" title="{{ c.title }}">{{ c.mark }}</div>
+                  <div style="{{ c.style }}" title="{{ c.title }}">
+                    <span style="{{ c.badgeStyle }}">{{ c.mark }}</span>
+                  </div>
                 </sc-for>
               </div>
             </sc-for>
           </div>
         </div>
-        <p class="text-muted" style="font-size:12px;margin:var(--space-3) 0 0">〇 {{ T.mAvail }}　✕ {{ T.mBusy }}　<span style="color:var(--color-accent-700)">！</span> {{ T.mLeave }}　<span style="color:var(--color-accent-700)">＋</span> {{ T.mOpen }}</p>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:var(--space-3);padding-top:var(--space-2);font-size:12px;color:var(--color-neutral-600)">
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="background:var(--color-accent-100);color:var(--color-accent-800);border:1px solid var(--color-accent-200);border-radius:var(--radius-sm);width:22px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:11px">✓</span> {{ T.mAvail }}</span>
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="color:var(--color-neutral-400);width:22px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:12px">—</span> {{ T.mBusy }}</span>
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;border-radius:var(--radius-sm);width:22px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:11px">！</span> {{ T.mLeave }}</span>
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="background:#ecfdf5;color:var(--color-accent-700);border:1px solid var(--color-accent-400);border-radius:var(--radius-sm);width:22px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:11px">＋</span> {{ T.mOpen }}</span>
+          </div>
+        </div>
       </div>
     </div>
   </sc-if>
@@ -335,6 +425,7 @@ class Component extends DCLogic {
       prevMonth: '上個月', nextMonth: '下個月',
       pickRowHint: '點任一列選擇該週', backToThisWeek: '回到本週', today: '今天', todayBtn: '回到今天',
       groupLabel: '組別', groupA: 'A 組', groupB: 'B 組', noGroup: '請勾選至少一個組別以查看時段',
+      scopeWeekdays: '平日 (一～五)', scopeFullWeek: '全週 (一～日)',
       recTitle: '推薦開會時段', overviewTitle: '每週時段總覽',
       legendAll: '全員皆可', legendOk: '達門檻', legendNo: '未達門檻',
       gcal: '加入 Google 日曆', copyInvite: '複製邀請文案', clear: '清除',
@@ -347,7 +438,7 @@ class Component extends DCLogic {
       submit: '送出，立即更新', myChanges: '已登記的異動', revoke: '撤銷',
       regHint: '點格子切換這學期的常態空檔，金色代表有空，改完立即生效。',
       clearAll: '全部清空', resetDefault: '回到預設',
-      matrixTitle: '成員狀態明細', slotCol: '時段',
+      matrixTitle: '成員狀態明細 · Raw Data', slotCol: '時段', countCol: '可出席人數', copyDayBtn: '複製當日狀態', copiedDay: '已複製當日出席資料',
       mAvail: '可出席', mBusy: '常態沒空', mLeave: '臨時請假（滑過看事由）', mOpen: '臨時釋出',
       dows: ['週日', '週一', '週二', '週三', '週四', '週五', '週六'],
       dowsShort: ['日', '一', '二', '三', '四', '五', '六'],
@@ -379,6 +470,7 @@ class Component extends DCLogic {
       quick: ['當天全天', '下午 13–18', '晚上 18–21', '連續兩天'],
       ovLeave: ' 請假', ovFree: ' 有空',
       tmpLeave: '臨時請假', tmpFree: '臨時有空',
+      leave: '請假',
       pickSummary: (n, h) => '已選 ' + n + ' 個時段 · 共 ' + h + ' 小時',
       eventTitle: '研究室會議',
       inviteHead: '【研究室會議候選時段】',
@@ -388,11 +480,12 @@ class Component extends DCLogic {
     en: {
       brand: '115 Senior Project · Meeting Time Survey',
       inSync: (n) => n + ' people in sync',
-      matrixBtn: 'Detail matrix', studentBtn: 'Student area', close: 'Close',
+      matrixBtn: 'Raw Data', studentBtn: 'Student area', close: 'Close',
       weekLabel: 'Week', prevWeek: 'Previous week', nextWeek: 'Next week',
       prevMonth: 'Previous month', nextMonth: 'Next month',
       pickRowHint: 'Click a row to pick that week', backToThisWeek: 'This week', today: 'Today', todayBtn: 'Back to today',
       groupLabel: 'Group', groupA: 'Group A', groupB: 'Group B', noGroup: 'Select at least one group to see slots',
+      scopeWeekdays: 'Mon–Fri', scopeFullWeek: 'Full Week',
       recTitle: 'Recommended slots', overviewTitle: 'Weekly overview',
       legendAll: 'Everyone free', legendOk: 'Meets threshold', legendNo: 'Below threshold',
       gcal: 'Add to Google Calendar', copyInvite: 'Copy invite text', clear: 'Clear',
@@ -405,7 +498,7 @@ class Component extends DCLogic {
       submit: 'Submit and update', myChanges: 'Logged changes', revoke: 'Undo',
       regHint: 'Tap cells to set your regular free hours this term. Gold means free; changes apply immediately.',
       clearAll: 'Clear all', resetDefault: 'Reset to default',
-      matrixTitle: 'Member status detail', slotCol: 'Slot',
+      matrixTitle: 'Member Availability Detail · Raw Data', slotCol: 'Slot', countCol: 'Available', copyDayBtn: 'Copy day summary', copiedDay: 'Day summary copied',
       mAvail: 'available', mBusy: 'usually busy', mLeave: 'one-off leave (hover for reason)', mOpen: 'one-off opening',
       dows: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
       dowsShort: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
@@ -437,6 +530,7 @@ class Component extends DCLogic {
       quick: ['All day', 'Afternoon 13–18', 'Evening 18–21', 'Two days'],
       ovLeave: ' leave', ovFree: ' free',
       tmpLeave: 'One-off leave', tmpFree: 'One-off opening',
+      leave: 'Leave',
       pickSummary: (n, h) => n + ' slots selected · ' + h + ' hours',
       eventTitle: 'Lab meeting',
       inviteHead: '[Lab meeting — candidate slots]',
@@ -448,7 +542,7 @@ class Component extends DCLogic {
   state = {
     lang: 'zh',
     week: 0, threshold: 'core', groups: ['A', 'B'],
-    sel: null, wide: true, picks: [],
+    sel: null, wide: typeof window !== 'undefined' ? window.innerWidth >= 760 : true, weekendMode: null, picks: [],
     drawerOpen: false, matrixOpen: false,
     who: 'ta', type: 'off', startAt: '', endAt: '', note: '',
     dataLoaded: true, busy: false, connected: false, syncStatus: '正在連線…', pinInput: '', verified: [], tab: 'temp', regEdits: {},
@@ -497,12 +591,23 @@ class Component extends DCLogic {
     return this.fmtDT(s, true) + ' – ' + this.fmtDT(e, !sameDay);
   }
   componentWillUnmount() { window.removeEventListener('resize', this._onResize); this.unsubscribe?.(); this.store.weekStop?.(); this.store.stops.forEach(stop=>stop()); }
-  measure() { const w = window.innerWidth; if ((w >= 760) !== this.state.wide) this.setState({ wide: w >= 760 }); }
+  measure() {
+    const w = window.innerWidth;
+    const isWide = w >= 760;
+    if (isWide !== this.state.wide) {
+      this.setState({ wide: isWide });
+    }
+  }
 
   /* — data helpers — */
   get dayStart() { return this.props.dayStart ?? 8; }
   get dayEnd() { return this.props.dayEnd ?? 21; }
-  get showWeekend() { return this.props.showWeekend ?? true; }
+  get showWeekend() {
+    if (this.state.weekendMode !== null && this.state.weekendMode !== undefined) {
+      return this.state.weekendMode;
+    }
+    return this.state.wide ?? true;
+  }
   get scope() {
     const gs = this.state.groups;
     return this.members.filter(m => gs.includes(m.group));
@@ -663,7 +768,23 @@ class Component extends DCLogic {
   }
 
   baseCellStyle(c, need, total) {
-    const base = { border: 'none', borderRadius: 'var(--radius-sm)', flex: 1, minWidth: 0, height: '32px', cursor: 'pointer', font: 'inherit', fontSize: '12px', fontWeight: '600', fontFeatureSettings: "'tnum'", display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .12s ease' };
+    const isMobile = !this.state.wide;
+    const base = {
+      border: 'none',
+      borderRadius: 'var(--radius-sm)',
+      flex: 1,
+      minWidth: 0,
+      height: isMobile ? '34px' : '32px',
+      cursor: 'pointer',
+      font: 'inherit',
+      fontSize: isMobile ? '13px' : '12px',
+      fontWeight: '600',
+      fontFeatureSettings: "'tnum'",
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      transition: 'all .12s ease'
+    };
     if (total > 0 && c.count === total) return { ...base, background: 'var(--color-accent-600)', color: '#ffffff', boxShadow: '0 2px 5px rgba(16, 185, 129, 0.3)' };
     if (c.count >= need && c.count > 0) return { ...base, background: 'var(--color-accent-100)', boxShadow: 'inset 0 0 0 1px var(--color-accent-300)', color: 'var(--color-accent-800)' };
     return { ...base, background: 'var(--color-surface-subtle)', boxShadow: 'inset 0 0 0 1px var(--color-divider)', color: 'var(--color-neutral-400)', opacity: 0.5 };
@@ -687,14 +808,56 @@ class Component extends DCLogic {
     });
 
     const cellStyle = (c, we, picked, isToday) => {
-      if (picked) return { border: 'none', borderRadius: 'var(--radius-sm)', flex: 1, minWidth: 0, height: '32px', cursor: 'pointer', font: 'inherit', fontSize: '13px', fontWeight: '700', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-accent-800)', color: '#ffffff', boxShadow: '0 0 0 2px var(--color-accent-900)' };
+      const isMobile = !S.wide;
+      if (picked) return { border: 'none', borderRadius: 'var(--radius-sm)', flex: 1, minWidth: 0, height: isMobile ? '34px' : '32px', cursor: 'pointer', font: 'inherit', fontSize: isMobile ? '14px' : '13px', fontWeight: '700', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-accent-800)', color: '#ffffff', boxShadow: '0 0 0 2px var(--color-accent-900)' };
       const dim = (s) => (we && !isToday) ? { ...s, opacity: Math.max(0.45, (s.opacity ?? 1) * 0.45) } : s;
       const s = dim(this.baseCellStyle(c, need, total));
       return (isToday && s.background === 'var(--color-surface-subtle)') ? { ...s, color: 'var(--color-neutral-700)' } : s;
     };
 
-    const rows = hours.map(h => ({
-      label: this.hm(h),
+    const timeColWidth = S.wide ? '54px' : '42px';
+    const labelColStyle = {
+      width: timeColWidth,
+      flex: 'none',
+      position: 'sticky',
+      left: 0,
+      background: 'var(--color-surface)',
+      zIndex: 2
+    };
+
+    const timeTopStyle = {
+      position: 'absolute',
+      top: '-1px',
+      transform: 'translateY(-50%)',
+      right: S.wide ? '8px' : '4px',
+      fontSize: S.wide ? '11px' : '10px',
+      fontWeight: '500',
+      fontFeatureSettings: "'tnum'",
+      color: 'var(--color-neutral-500)',
+      lineHeight: 1,
+      pointerEvents: 'none'
+    };
+
+    const timeBottomStyle = {
+      position: 'absolute',
+      bottom: '-2px',
+      transform: 'translateY(50%)',
+      right: S.wide ? '8px' : '4px',
+      fontSize: S.wide ? '11px' : '10px',
+      fontWeight: '500',
+      fontFeatureSettings: "'tnum'",
+      color: 'var(--color-neutral-500)',
+      lineHeight: 1,
+      pointerEvents: 'none'
+    };
+
+    const rows = hours.map((h, idx) => ({
+      timeStart: this.hm(h),
+      timeEnd: this.hm(h + 1),
+      isLast: idx === hours.length - 1,
+      labelColStyle,
+      timeTopStyle,
+      timeBottomStyle,
       cells: dayMeta.map(dm => {
         const c = this.cellInfo(dm.date, h);
         const key = this.iso(dm.date) + '#' + h;
@@ -736,7 +899,7 @@ class Component extends DCLogic {
       rank: L.ranks[i],
       title: r.dm.dow + ' ' + r.dm.md + '　' + this.hm(r.start) + '–' + this.hm(r.end),
       countLabel: L.countLabel(r.c.count, total),
-      missingLabel: r.c.no.length ? L.missing(r.c.no.map(n => this.nameOf(n.m) + (n.ov && n.ov.note ? '（' + n.ov.note + '）' : '')).join(sep)) : L.allHere,
+      missingLabel: r.c.no.length ? L.missing(r.c.no.map(n => this.nameOf(n.m) + (n.ov ? '（' + ((n.ov.note && n.ov.note.trim()) ? n.ov.note.trim() : L.leave) + '）' : '')).join(sep)) : L.allHere,
       cardStyle: r.c.count === total ? { borderColor: 'var(--color-accent)' } : {},
       gcalUrl: gcal(r),
       copyInvite: () => this.copy(L.inviteOne(r.dm.dow, r.dm.md, this.hm(r.start), this.hm(r.end), r.c.count, total), L.copied)
@@ -776,27 +939,91 @@ class Component extends DCLogic {
 
     /* matrix */
     const mDay = dayMeta[Math.min(S.matrixDay, dayMeta.length - 1)] || dayMeta[0];
+    const matrixSubtitle = (S.lang === 'zh' ? (this.weekName(S.week) + ' · ') : (this.weekName(S.week) + ' · '))
+      + mDay.dow + ' ' + mDay.md + ' · '
+      + (S.lang === 'zh' ? ('共 ' + total + ' 位成員') : (total + ' members'));
+
+    const matrixMembers = this.scope.map(m => ({
+      name: this.nameOf(m),
+      group: m.group,
+      gpLabel: m.group + '組'
+    }));
+
     const matrixRows = hours.map(h => {
       const c = this.cellInfo(mDay.date, h);
       const by = {}; c.yes.forEach(y => by[y.m.id] = { ok: true, ov: y.ov }); c.no.forEach(n => by[n.m.id] = { ok: false, ov: n.ov });
+      const isAll = total > 0 && c.count === total;
+      const isMeet = c.count >= need && c.count > 0;
+      const countBadgeStyle = isAll
+        ? { background: 'var(--color-accent-600)', color: '#ffffff', fontWeight: '700', borderRadius: 'var(--radius-full)', padding: '2px 8px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '46px' }
+        : isMeet
+        ? { background: 'var(--color-accent-100)', color: 'var(--color-accent-800)', border: '1px solid var(--color-accent-300)', fontWeight: '600', borderRadius: 'var(--radius-full)', padding: '2px 8px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '46px' }
+        : { background: 'var(--color-surface-subtle)', color: 'var(--color-neutral-500)', borderRadius: 'var(--radius-full)', padding: '2px 8px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '46px' };
+
+      const cells = this.scope.map(m => {
+        const s = by[m.id] || { ok: false };
+        const temp = !!s.ov;
+        const isLeave = temp && s.ov.type === 'off';
+        const isOpen = temp && s.ov.type === 'on';
+        const isAvail = s.ok && !temp;
+
+        let mark = '—';
+        let badgeStyle = { color: 'var(--color-neutral-400)', width: '22px', height: '20px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' };
+        let title = L.mBusy;
+
+        if (isLeave) {
+          mark = '！';
+          title = L.tmpLeave + (s.ov.note ? '：' + s.ov.note : '');
+          badgeStyle = { background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a', borderRadius: 'var(--radius-sm)', width: '22px', height: '20px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '11px' };
+        } else if (isOpen) {
+          mark = '＋';
+          title = L.tmpFree + (s.ov.note ? '：' + s.ov.note : '');
+          badgeStyle = { background: '#ecfdf5', color: 'var(--color-accent-700)', border: '1px solid var(--color-accent-400)', borderRadius: 'var(--radius-sm)', width: '22px', height: '20px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '12px' };
+        } else if (isAvail) {
+          mark = '✓';
+          title = L.mAvail;
+          badgeStyle = { background: 'var(--color-accent-100)', color: 'var(--color-accent-800)', border: '1px solid var(--color-accent-200)', borderRadius: 'var(--radius-sm)', width: '22px', height: '20px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '11px' };
+        }
+
+        return {
+          mark,
+          title,
+          badgeStyle,
+          style: { flex: 1, minWidth: '64px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 4px' }
+        };
+      });
+
       return {
-        label: this.hm(h) + '–' + this.hm(h + 1),
-        cells: this.scope.map(m => {
-          const s = by[m.id] || { ok: false };
-          const temp = !!s.ov;
-          return {
-            mark: temp ? (s.ok ? '＋' : '！') : (s.ok ? '〇' : '✕'),
-            title: s.ov ? (s.ov.type === 'off' ? L.tmpLeave : L.tmpFree) + (s.ov.note ? '：' + s.ov.note : '') : '',
-            style: {
-              flex: 1, minWidth: '56px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFeatureSettings: "'tnum'", fontSize: '14px', padding: '6px 4px',
-              color: temp ? 'var(--color-accent-700)' : (s.ok ? 'var(--color-accent-800)' : 'var(--color-neutral-400)'),
-              fontWeight: temp || s.ok ? 600 : 400
-            }
-          };
-        })
+        label: this.hm(h) + ' – ' + this.hm(h + 1),
+        countText: c.count + ' / ' + total,
+        countBadgeStyle,
+        cells
       };
     });
+
+    const copyMatrixDay = () => {
+      const lines = [
+        `【${L.brand}】`,
+        `${this.weekName(S.week)} · ${mDay.dow} ${mDay.md} 成員出席狀況 (${total} 人)：`,
+        '----------------------------------------'
+      ];
+      matrixRows.forEach(r => {
+        const freeNames = [];
+        const leaveNotes = [];
+        this.scope.forEach((m, i) => {
+          const c = r.cells[i];
+          if (c.mark === '✓' || c.mark === '＋') freeNames.push(this.nameOf(m));
+          else if (c.mark === '！') {
+            if (c.title) leaveNotes.push(this.nameOf(m) + ' (' + c.title + ')');
+            else leaveNotes.push(this.nameOf(m));
+          }
+        });
+        let line = `${r.label} [${r.countText}] 有空: ${freeNames.join('、') || '無'}`;
+        if (leaveNotes.length) line += ` | 請假: ${leaveNotes.join('、')}`;
+        lines.push(line);
+      });
+      this.copy(lines.join('\n'), L.copiedDay);
+    };
 
     /* week picker */
     const md = (d) => (d.getMonth() + 1) + '/' + d.getDate();
@@ -833,6 +1060,20 @@ class Component extends DCLogic {
 
     return {
       T: L,
+      exportLabel: S.lang === 'zh' ? '匯出日曆圖' : 'Export calendar',
+      exportUnavailable: !S.dataLoaded || !total,
+      openExport: () => {
+        if (!S.dataLoaded || !total) return;
+        const monday = this.monday(days[0]);
+        const exportDays = Array.from({length: 7}, (_, i) => {
+          const date = new Date(monday); date.setDate(date.getDate() + i);
+          return { iso: this.iso(date), label: this.dows[date.getDay()],
+            cells: hours.map(h => ({count: this.cellInfo(date, h).count})) };
+        });
+        window.openCalendarExport({ lang: S.lang, weekend: this.showWeekend,
+          days: exportDays, hours, members: this.scope.map(m => ({name: this.nameOf(m)})),
+          groups: [...S.groups], need, connected: S.connected });
+      },
       langBtn: S.lang === 'zh' ? 'EN' : '中文',
       toggleLang: () => {
         const next = S.lang === 'zh' ? 'en' : 'zh';
@@ -851,7 +1092,7 @@ class Component extends DCLogic {
       copyPickInvite: () => this.copy(pickText, L.copied),
       weekHeading: L.heading(this.weekName(S.week)),
       weekSubtitle: L.weekSubtitle(dayMeta[0].md + ' – ' + dayMeta[dayMeta.length - 1].md),
-      weekBtnLabel: L.weekBtn(this.weekName(S.week), md(selMon), md(new Date(selMon.getTime() + 6 * 86400000))),
+      weekBtnLabel: L.weekBtn(this.weekName(S.week), md(selMon), md(new Date(selMon.getTime() + (this.showWeekend ? 6 : 4) * 86400000))),
       weekPrev: () => this.setWeek(S.week - 1),
       weekNext: () => this.setWeek(S.week + 1),
       togglePicker: () => this.setState({ pickerOpen: !S.pickerOpen, pickerMonth: null }),
@@ -873,11 +1114,14 @@ class Component extends DCLogic {
       todayBandStyle: (() => {
         const i = dayMeta.findIndex(dm => dm.today);
         if (i < 0) return { display: 'none' };
-        const col = '((100% - 75px) / 7)';
+        const n = dayMeta.length;
+        const timeW = S.wide ? 54 : 42;
+        const gap = 3;
+        const col = `((100% - ${timeW + n * gap}px) / ${n})`;
         return {
           position: 'absolute', top: '-6px', bottom: '-6px', zIndex: 0,
-          left: 'calc(57px + ' + i + ' * (' + col + ' + 3px))',
-          width: 'calc(' + col + ')',
+          left: `calc(${timeW + gap}px + ${i} * (${col} + ${gap}px))`,
+          width: `calc(${col})`,
           background: 'rgba(16, 185, 129, 0.05)',
           boxShadow: '0 0 0 1.5px rgba(16, 185, 129, 0.35)',
           borderRadius: 'var(--radius-md)',
@@ -885,11 +1129,32 @@ class Component extends DCLogic {
           animation: 'todayBreathe 3.4s ease-in-out infinite'
         };
       })(),
+      calendarGridStyle: {
+        minWidth: this.showWeekend ? (S.wide ? '580px' : '520px') : '0',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '3px',
+        position: 'relative'
+      },
+      timeColHeadStyle: {
+        width: S.wide ? '54px' : '42px',
+        flex: 'none',
+        position: 'sticky',
+        left: 0,
+        background: 'var(--color-surface)',
+        zIndex: 3
+      },
+      showWeekend: this.showWeekend,
+      isWeekdays: !this.showWeekend,
+      isFullWeek: this.showWeekend,
+      setShowWeekdays: () => this.setState({ weekendMode: false }),
+      setShowFullWeek: () => this.setState({ weekendMode: true }),
       toggleGpA: () => this.toggleGroup('A'),
       toggleGpB: () => this.toggleGroup('B'),
       detailTitle: sel ? sel.dm.dow + ' ' + sel.dm.md + '　' + this.hm(sel.h) + '–' + this.hm(sel.h + 1) : L.detailHint,
       detailYes: sel ? L.detailYes(sel.c.yes.map(y => this.nameOf(y.m)).join(sep) || L.none, sel.c.count) : '',
-      detailNo: sel && sel.c.no.length ? L.detailNo(sel.c.no.map(n => this.nameOf(n.m) + (n.ov ? '（' + (n.ov.note || L.tmpLeave) + '）' : '')).join(sep)) : '',
+      detailNo: sel && sel.c.no.length ? L.detailNo(sel.c.no.map(n => this.nameOf(n.m) + (n.ov ? '（' + ((n.ov.note && n.ov.note.trim()) ? n.ov.note.trim() : L.leave) + '）' : '')).join(sep)) : '',
       openDrawer: () => this.setState({ drawerOpen: true }),
       closeDrawer: () => this.setState({ drawerOpen: false }),
       openMatrix: () => this.setState({ matrixOpen: true }),
@@ -924,8 +1189,39 @@ class Component extends DCLogic {
       setPin: () => {},
       unlock: () => {},
       regDays: dayMeta.map(dm => ({ label: dm.dowShort, style: { flex: 1, minWidth: 0, textAlign: 'center', fontFamily: 'var(--font-heading)', fontSize: '13px', paddingBottom: '4px', opacity: dm.weekend ? 0.5 : 1 } })),
-      regRows: hours.map(h => ({
-        label: this.hm(h),
+      regRows: hours.map((h, idx) => ({
+        timeStart: this.hm(h),
+        timeEnd: this.hm(h + 1),
+        isLast: idx === hours.length - 1,
+        labelColStyle: {
+          width: '46px',
+          flex: 'none',
+          position: 'relative'
+        },
+        timeTopStyle: {
+          position: 'absolute',
+          top: '-1px',
+          transform: 'translateY(-50%)',
+          right: '6px',
+          fontSize: '11px',
+          fontWeight: '500',
+          fontFeatureSettings: "'tnum'",
+          color: 'var(--color-neutral-600)',
+          lineHeight: 1,
+          pointerEvents: 'none'
+        },
+        timeBottomStyle: {
+          position: 'absolute',
+          bottom: '-2px',
+          transform: 'translateY(50%)',
+          right: '6px',
+          fontSize: '11px',
+          fontWeight: '500',
+          fontFeatureSettings: "'tnum'",
+          color: 'var(--color-neutral-600)',
+          lineHeight: 1,
+          pointerEvents: 'none'
+        },
         cells: dayMeta.map(dm => {
           const on = this.hoursOf(S.who, dm.date.getDay()).includes(h);
           return {
@@ -967,8 +1263,46 @@ class Component extends DCLogic {
         else this.flash(this.store.text(S.lang));
       },
       myOverrides: myOv, hasMyOverrides: myOv.length > 0,
-      dayTabs: dayMeta.map((dm, i) => ({ label: dm.dow + ' ' + dm.md, style: mChip(i === Math.min(S.matrixDay, dayMeta.length - 1)), pick: () => this.setState({ matrixDay: i }) })),
-      matrixMembers: this.scope.map(m => ({ name: this.nameOf(m) })), matrixRows
+      dayTabs: dayMeta.map((dm, i) => {
+        const active = i === Math.min(S.matrixDay, dayMeta.length - 1);
+        return {
+          label: dm.dow + ' ' + dm.md,
+          today: dm.today,
+          style: {
+            cursor: 'pointer',
+            font: 'inherit',
+            fontSize: '13px',
+            fontWeight: active ? '600' : '500',
+            padding: '6px 14px',
+            borderRadius: 'var(--radius-full)',
+            background: active ? 'var(--color-accent-700)' : 'var(--color-surface)',
+            color: active ? '#ffffff' : 'var(--color-neutral-700)',
+            border: '1px solid ' + (active ? 'var(--color-accent-700)' : 'var(--color-divider)'),
+            boxShadow: active ? '0 2px 6px rgba(5,150,105,0.25)' : 'none',
+            whiteSpace: 'nowrap',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            transition: 'all .15s ease'
+          },
+          pick: () => this.setState({ matrixDay: i })
+        };
+      }),
+      matrixStyle: {
+        width: 'min(980px, 96vw)',
+        maxHeight: '90vh',
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-divider)',
+        borderRadius: 'var(--radius-xl)',
+        padding: 'var(--space-4) var(--space-6)',
+        boxShadow: 'var(--shadow-lg)'
+      },
+      matrixSubtitle,
+      copyMatrixDay,
+      matrixMembers,
+      matrixRows
     };
   }
 }

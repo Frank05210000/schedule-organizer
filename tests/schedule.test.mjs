@@ -34,3 +34,15 @@ test('component source parses and deployed HTML has no original credentials',()=
  assert.doesNotThrow(()=>new Function('DCLogic',code));
  assert.doesNotMatch(s,/pin: '\d+'|示範 PIN|Demo PIN|meetslot-overrides-v1|meetslot-reg-v1/);
 });
+test('absentee format shows note if present, otherwise default leave',()=>{
+ const formatAbsentee = (name, ov, leaveLabel = '請假') => {
+   const note = ov && ov.note && ov.note.trim();
+   return name + (ov ? '（' + (note || leaveLabel) + '）' : '');
+ };
+ assert.equal(formatAbsentee('徐法恩', { type: 'off' }), '徐法恩（請假）');
+ assert.equal(formatAbsentee('徐法恩', { type: 'off', note: '' }), '徐法恩（請假）');
+ assert.equal(formatAbsentee('徐法恩', { type: 'off', note: '   ' }), '徐法恩（請假）');
+ assert.equal(formatAbsentee('徐法恩', { type: 'off', note: '看醫生' }), '徐法恩（看醫生）');
+ assert.equal(formatAbsentee('徐法恩', null), '徐法恩');
+});
+

@@ -242,8 +242,13 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
               </sc-for>
             </div>
             <sc-for list="{{ regRows }}" as="r" hint-placeholder-count="13">
-              <div style="display:flex;gap:3px">
-                <div style="width:46px;flex:none;font-size:11px;font-feature-settings:'tnum';color:var(--color-neutral-600);display:flex;align-items:center;justify-content:flex-end;padding-right:6px">{{ r.label }}</div>
+              <div style="display:flex;gap:3px;align-items:stretch">
+                <div style="{{ r.labelColStyle }}">
+                  <span style="{{ r.timeTopStyle }}">{{ r.timeStart }}</span>
+                  <sc-if value="{{ r.isLast }}" hint-placeholder-val="{{ false }}">
+                    <span style="{{ r.timeBottomStyle }}">{{ r.timeEnd }}</span>
+                  </sc-if>
+                </div>
                 <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7">
                   <button style="{{ c.style }}" onClick="{{ c.toggle }}"></button>
                 </sc-for>
@@ -262,34 +267,67 @@ body { margin: 0; -webkit-text-size-adjust: 100%; }
   <sc-if value="{{ matrixOpen }}" hint-placeholder-val="{{ false }}">
     <div class="dialog-backdrop" style="padding:var(--space-3);z-index:50" onClick="{{ closeMatrix }}">
       <div style="{{ matrixStyle }}" onClick="{{ stop }}">
-        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap">
-          <h3 style="margin:0;font-weight:400">{{ T.matrixTitle }}</h3>
-          <button class="btn btn-ghost" onClick="{{ closeMatrix }}">{{ T.close }}</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap;padding-bottom:var(--space-3);border-bottom:1px solid var(--color-divider)">
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:var(--color-accent-100);color:var(--color-accent-700);border-radius:var(--radius-sm);font-size:14px">📊</span>
+              <h3 style="margin:0;font-family:var(--font-heading);font-weight:700;font-size:18px;color:var(--color-text)">{{ T.matrixTitle }}</h3>
+            </div>
+            <span style="font-size:12px;color:var(--color-neutral-500);font-feature-settings:'tnum'">{{ matrixSubtitle }}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px;display:inline-flex;align-items:center;gap:6px" onClick="{{ copyMatrixDay }}">📋 {{ T.copyDayBtn }}</button>
+            <button class="btn btn-ghost" style="padding:6px 12px;font-size:13px" onClick="{{ closeMatrix }}">{{ T.close }}</button>
+          </div>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin:var(--space-3) 0">
+
+        <div style="display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:var(--space-3) 0;flex-shrink:0">
           <sc-for list="{{ dayTabs }}" as="t" hint-placeholder-count="7">
-            <button style="{{ t.style }}" onClick="{{ t.pick }}">{{ t.label }}</button>
+            <button style="{{ t.style }}" onClick="{{ t.pick }}">
+              <span>{{ t.label }}</span>
+              <sc-if value="{{ t.today }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:10px;background:rgba(255,255,255,0.35);padding:1px 6px;border-radius:var(--radius-full);line-height:1.2;font-weight:700">今日</span>
+              </sc-if>
+            </button>
           </sc-for>
         </div>
-        <div style="overflow:auto;flex:1;min-height:0;border:1px solid var(--color-divider);border-radius:var(--radius-md)">
-          <div style="min-width:540px;display:flex;flex-direction:column">
-            <div style="display:flex;align-items:center;background:var(--color-surface-subtle);border-bottom:1px solid var(--color-divider);position:sticky;top:0;z-index:2">
-              <div style="width:105px;flex:none;font-size:12px;font-weight:600;color:var(--color-neutral-600);padding:9px 12px;position:sticky;left:0;background:var(--color-surface-subtle);z-index:3">{{ T.slotCol }}</div>
+
+        <div style="overflow:auto;flex:1;min-height:0;border:1px solid var(--color-divider);border-radius:var(--radius-lg);background:var(--color-surface);box-shadow:inset 0 1px 2px rgba(0,0,0,0.02)">
+          <div style="min-width:640px;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;background:var(--color-surface-subtle);border-bottom:1px solid var(--color-divider);position:sticky;top:0;z-index:3">
+              <div style="width:105px;flex:none;font-size:12px;font-weight:700;color:var(--color-neutral-700);padding:10px 12px;position:sticky;left:0;background:var(--color-surface-subtle);z-index:4;border-right:1px solid var(--color-divider)">{{ T.slotCol }}</div>
+              <div style="width:90px;flex:none;text-align:center;font-size:12px;font-weight:700;color:var(--color-neutral-700);padding:10px 6px;border-right:1px solid var(--color-divider)">{{ T.countCol }}</div>
               <sc-for list="{{ matrixMembers }}" as="m" hint-placeholder-count="7">
-                <div style="flex:1;min-width:56px;text-align:center;font-size:12px;font-weight:600;color:var(--color-neutral-700);padding:9px 4px">{{ m.name }}</div>
+                <div style="flex:1;min-width:64px;text-align:center;padding:8px 4px;border-right:1px solid var(--color-divider)">
+                  <div style="font-size:12px;font-weight:600;color:var(--color-text)">{{ m.name }}</div>
+                  <span style="display:inline-block;font-size:10px;padding:1px 6px;border-radius:var(--radius-full);background:var(--color-neutral-200);color:var(--color-neutral-700);margin-top:2px;font-weight:500">{{ m.gpLabel }}</span>
+                </div>
               </sc-for>
             </div>
             <sc-for list="{{ matrixRows }}" as="r" hint-placeholder-count="13">
-              <div style="display:flex;align-items:center;border-bottom:1px solid var(--color-divider);min-height:34px">
-                <div style="width:105px;flex:none;font-feature-settings:'tnum';font-size:12px;white-space:nowrap;padding:7px 12px;color:var(--color-neutral-600);position:sticky;left:0;background:var(--color-surface);z-index:1">{{ r.label }}</div>
+              <div style="display:flex;align-items:center;border-bottom:1px solid var(--color-divider);min-height:36px">
+                <div style="width:105px;flex:none;font-feature-settings:'tnum';font-size:12px;font-weight:500;white-space:nowrap;padding:8px 12px;color:var(--color-neutral-700);position:sticky;left:0;background:var(--color-surface);z-index:1;border-right:1px solid var(--color-divider)">{{ r.label }}</div>
+                <div style="width:90px;flex:none;text-align:center;padding:6px;border-right:1px solid var(--color-divider)">
+                  <span style="{{ r.countBadgeStyle }}">{{ r.countText }}</span>
+                </div>
                 <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7">
-                  <div style="{{ c.style }}" title="{{ c.title }}">{{ c.mark }}</div>
+                  <div style="{{ c.style }}" title="{{ c.title }}">
+                    <span style="{{ c.badgeStyle }}">{{ c.mark }}</span>
+                  </div>
                 </sc-for>
               </div>
             </sc-for>
           </div>
         </div>
-        <p class="text-muted" style="font-size:12px;margin:var(--space-3) 0 0">〇 {{ T.mAvail }}　✕ {{ T.mBusy }}　<span style="color:var(--color-accent-700)">！</span> {{ T.mLeave }}　<span style="color:var(--color-accent-700)">＋</span> {{ T.mOpen }}</p>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:var(--space-3);padding-top:var(--space-2);font-size:12px;color:var(--color-neutral-600)">
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="background:var(--color-accent-100);color:var(--color-accent-800);border:1px solid var(--color-accent-200);border-radius:var(--radius-sm);width:22px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:11px">✓</span> {{ T.mAvail }}</span>
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="color:var(--color-neutral-400);width:22px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:12px">—</span> {{ T.mBusy }}</span>
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;border-radius:var(--radius-sm);width:22px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:11px">！</span> {{ T.mLeave }}</span>
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="background:#ecfdf5;color:var(--color-accent-700);border:1px solid var(--color-accent-400);border-radius:var(--radius-sm);width:22px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:11px">＋</span> {{ T.mOpen }}</span>
+          </div>
+        </div>
       </div>
     </div>
   </sc-if>
@@ -361,7 +399,7 @@ class Component extends DCLogic {
       submit: '送出，立即更新', myChanges: '已登記的異動', revoke: '撤銷',
       regHint: '點格子切換這學期的常態空檔，金色代表有空，改完立即生效。',
       clearAll: '全部清空', resetDefault: '回到預設',
-      matrixTitle: '成員狀態明細', slotCol: '時段',
+      matrixTitle: '成員狀態明細 · Raw Data', slotCol: '時段', countCol: '可出席人數', copyDayBtn: '複製當日狀態', copiedDay: '已複製當日出席資料',
       mAvail: '可出席', mBusy: '常態沒空', mLeave: '臨時請假（滑過看事由）', mOpen: '臨時釋出',
       dows: ['週日', '週一', '週二', '週三', '週四', '週五', '週六'],
       dowsShort: ['日', '一', '二', '三', '四', '五', '六'],
@@ -383,7 +421,7 @@ class Component extends DCLogic {
       detailNo: (s) => '不可出席：' + s,
       none: '無',
       missShort: (s) => '　缺 ' + s,
-      pinHint: (p) => '示範 PIN：' + p,
+      pinHint: (pin) => '示範固定 PIN：' + pin,
       pinBad: 'PIN 碼不正確', copied: '已複製邀請文案', regResetDone: '已回到預設空檔',
       needTimes: '請選擇開始與結束時間', endAfterStart: '結束時間要晚於開始時間',
       needTimesDot: '請選擇開始與結束時間。', endAfterStartDot: '結束時間要晚於開始時間。',
@@ -393,6 +431,7 @@ class Component extends DCLogic {
       quick: ['當天全天', '下午 13–18', '晚上 18–21', '連續兩天'],
       ovLeave: ' 請假', ovFree: ' 有空',
       tmpLeave: '臨時請假', tmpFree: '臨時有空',
+      leave: '請假',
       pickSummary: (n, h) => '已選 ' + n + ' 個時段 · 共 ' + h + ' 小時',
       eventTitle: '研究室會議',
       inviteHead: '【研究室會議候選時段】',
@@ -402,7 +441,7 @@ class Component extends DCLogic {
     en: {
       brand: '115 Senior Project · Meeting Time Survey',
       inSync: (n) => n + ' people in sync',
-      matrixBtn: 'Detail matrix', studentBtn: 'Student area', close: 'Close',
+      matrixBtn: 'Raw Data', studentBtn: 'Student area', close: 'Close',
       weekLabel: 'Week', prevWeek: 'Previous week', nextWeek: 'Next week',
       prevMonth: 'Previous month', nextMonth: 'Next month',
       pickRowHint: 'Click a row to pick that week', backToThisWeek: 'This week', today: 'Today', todayBtn: 'Back to today',
@@ -419,7 +458,7 @@ class Component extends DCLogic {
       submit: 'Submit and update', myChanges: 'Logged changes', revoke: 'Undo',
       regHint: 'Tap cells to set your regular free hours this term. Gold means free; changes apply immediately.',
       clearAll: 'Clear all', resetDefault: 'Reset to default',
-      matrixTitle: 'Member status detail', slotCol: 'Slot',
+      matrixTitle: 'Member Availability Detail · Raw Data', slotCol: 'Slot', countCol: 'Available', copyDayBtn: 'Copy day summary', copiedDay: 'Day summary copied',
       mAvail: 'available', mBusy: 'usually busy', mLeave: 'one-off leave (hover for reason)', mOpen: 'one-off opening',
       dows: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
       dowsShort: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
@@ -451,6 +490,7 @@ class Component extends DCLogic {
       quick: ['All day', 'Afternoon 13–18', 'Evening 18–21', 'Two days'],
       ovLeave: ' leave', ovFree: ' free',
       tmpLeave: 'One-off leave', tmpFree: 'One-off opening',
+      leave: 'Leave',
       pickSummary: (n, h) => n + ' slots selected · ' + h + ' hours',
       eventTitle: 'Lab meeting',
       inviteHead: '[Lab meeting — candidate slots]',
@@ -733,7 +773,7 @@ class Component extends DCLogic {
       rank: L.ranks[i],
       title: r.dm.dow + ' ' + r.dm.md + '　' + this.hm(r.start) + '–' + this.hm(r.end),
       countLabel: L.countLabel(r.c.count, total),
-      missingLabel: r.c.no.length ? L.missing(r.c.no.map(n => this.nameOf(n.m) + (n.ov && n.ov.note ? '（' + n.ov.note + '）' : '')).join(sep)) : L.allHere,
+      missingLabel: r.c.no.length ? L.missing(r.c.no.map(n => this.nameOf(n.m) + (n.ov ? '（' + ((n.ov.note && n.ov.note.trim()) ? n.ov.note.trim() : L.leave) + '）' : '')).join(sep)) : L.allHere,
       cardStyle: r.c.count === total ? { borderColor: 'var(--color-accent)' } : {},
       gcalUrl: gcal(r),
       copyInvite: () => this.copy(L.inviteOne(r.dm.dow, r.dm.md, this.hm(r.start), this.hm(r.end), r.c.count, total), L.copied)
@@ -773,27 +813,91 @@ class Component extends DCLogic {
 
     /* matrix */
     const mDay = dayMeta[Math.min(S.matrixDay, dayMeta.length - 1)] || dayMeta[0];
+    const matrixSubtitle = (S.lang === 'zh' ? (this.weekName(S.week) + ' · ') : (this.weekName(S.week) + ' · '))
+      + mDay.dow + ' ' + mDay.md + ' · '
+      + (S.lang === 'zh' ? ('共 ' + total + ' 位成員') : (total + ' members'));
+
+    const matrixMembers = this.scope.map(m => ({
+      name: this.nameOf(m),
+      group: m.group,
+      gpLabel: m.group + '組'
+    }));
+
     const matrixRows = hours.map(h => {
       const c = this.cellInfo(mDay.date, h);
       const by = {}; c.yes.forEach(y => by[y.m.id] = { ok: true, ov: y.ov }); c.no.forEach(n => by[n.m.id] = { ok: false, ov: n.ov });
+      const isAll = total > 0 && c.count === total;
+      const isMeet = c.count >= need && c.count > 0;
+      const countBadgeStyle = isAll
+        ? { background: 'var(--color-accent-600)', color: '#ffffff', fontWeight: '700', borderRadius: 'var(--radius-full)', padding: '2px 8px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '46px' }
+        : isMeet
+        ? { background: 'var(--color-accent-100)', color: 'var(--color-accent-800)', border: '1px solid var(--color-accent-300)', fontWeight: '600', borderRadius: 'var(--radius-full)', padding: '2px 8px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '46px' }
+        : { background: 'var(--color-surface-subtle)', color: 'var(--color-neutral-500)', borderRadius: 'var(--radius-full)', padding: '2px 8px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '46px' };
+
+      const cells = this.scope.map(m => {
+        const s = by[m.id] || { ok: false };
+        const temp = !!s.ov;
+        const isLeave = temp && s.ov.type === 'off';
+        const isOpen = temp && s.ov.type === 'on';
+        const isAvail = s.ok && !temp;
+
+        let mark = '—';
+        let badgeStyle = { color: 'var(--color-neutral-400)', width: '22px', height: '20px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' };
+        let title = L.mBusy;
+
+        if (isLeave) {
+          mark = '！';
+          title = L.tmpLeave + (s.ov.note ? '：' + s.ov.note : '');
+          badgeStyle = { background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a', borderRadius: 'var(--radius-sm)', width: '22px', height: '20px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '11px' };
+        } else if (isOpen) {
+          mark = '＋';
+          title = L.tmpFree + (s.ov.note ? '：' + s.ov.note : '');
+          badgeStyle = { background: '#ecfdf5', color: 'var(--color-accent-700)', border: '1px solid var(--color-accent-400)', borderRadius: 'var(--radius-sm)', width: '22px', height: '20px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '12px' };
+        } else if (isAvail) {
+          mark = '✓';
+          title = L.mAvail;
+          badgeStyle = { background: 'var(--color-accent-100)', color: 'var(--color-accent-800)', border: '1px solid var(--color-accent-200)', borderRadius: 'var(--radius-sm)', width: '22px', height: '20px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '11px' };
+        }
+
+        return {
+          mark,
+          title,
+          badgeStyle,
+          style: { flex: 1, minWidth: '64px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 4px' }
+        };
+      });
+
       return {
-        label: this.hm(h) + '–' + this.hm(h + 1),
-        cells: this.scope.map(m => {
-          const s = by[m.id] || { ok: false };
-          const temp = !!s.ov;
-          return {
-            mark: temp ? (s.ok ? '＋' : '！') : (s.ok ? '〇' : '✕'),
-            title: s.ov ? (s.ov.type === 'off' ? L.tmpLeave : L.tmpFree) + (s.ov.note ? '：' + s.ov.note : '') : '',
-            style: {
-              flex: 1, minWidth: '56px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFeatureSettings: "'tnum'", fontSize: '14px', padding: '6px 4px',
-              color: temp ? 'var(--color-accent-700)' : (s.ok ? 'var(--color-accent-800)' : 'var(--color-neutral-400)'),
-              fontWeight: temp || s.ok ? 600 : 400
-            }
-          };
-        })
+        label: this.hm(h) + ' – ' + this.hm(h + 1),
+        countText: c.count + ' / ' + total,
+        countBadgeStyle,
+        cells
       };
     });
+
+    const copyMatrixDay = () => {
+      const lines = [
+        `【${L.brand}】`,
+        `${this.weekName(S.week)} · ${mDay.dow} ${mDay.md} 成員出席狀況 (${total} 人)：`,
+        '----------------------------------------'
+      ];
+      matrixRows.forEach(r => {
+        const freeNames = [];
+        const leaveNotes = [];
+        this.scope.forEach((m, i) => {
+          const c = r.cells[i];
+          if (c.mark === '✓' || c.mark === '＋') freeNames.push(this.nameOf(m));
+          else if (c.mark === '！') {
+            if (c.title) leaveNotes.push(this.nameOf(m) + ' (' + c.title + ')');
+            else leaveNotes.push(this.nameOf(m));
+          }
+        });
+        let line = `${r.label} [${r.countText}] 有空: ${freeNames.join('、') || '無'}`;
+        if (leaveNotes.length) line += ` | 請假: ${leaveNotes.join('、')}`;
+        lines.push(line);
+      });
+      this.copy(lines.join('\n'), L.copiedDay);
+    };
 
     /* week picker */
     const md = (d) => (d.getMonth() + 1) + '/' + d.getDate();
@@ -886,7 +990,7 @@ class Component extends DCLogic {
       toggleGpB: () => this.toggleGroup('B'),
       detailTitle: sel ? sel.dm.dow + ' ' + sel.dm.md + '　' + this.hm(sel.h) + '–' + this.hm(sel.h + 1) : L.detailHint,
       detailYes: sel ? L.detailYes(sel.c.yes.map(y => this.nameOf(y.m)).join(sep) || L.none, sel.c.count) : '',
-      detailNo: sel && sel.c.no.length ? L.detailNo(sel.c.no.map(n => this.nameOf(n.m) + (n.ov ? '（' + (n.ov.note || L.tmpLeave) + '）' : '')).join(sep)) : '',
+      detailNo: sel && sel.c.no.length ? L.detailNo(sel.c.no.map(n => this.nameOf(n.m) + (n.ov ? '（' + ((n.ov.note && n.ov.note.trim()) ? n.ov.note.trim() : L.leave) + '）' : '')).join(sep)) : '',
       openDrawer: () => this.setState({ drawerOpen: true }),
       closeDrawer: () => this.setState({ drawerOpen: false }),
       openMatrix: () => this.setState({ matrixOpen: true }),
@@ -912,8 +1016,39 @@ class Component extends DCLogic {
         this.setState({ verified: [...S.verified, S.who], pinInput: '' });
       },
       regDays: dayMeta.map(dm => ({ label: dm.dowShort, style: { flex: 1, minWidth: 0, textAlign: 'center', fontFamily: 'var(--font-heading)', fontSize: '13px', paddingBottom: '4px', opacity: dm.weekend ? 0.5 : 1 } })),
-      regRows: hours.map(h => ({
-        label: this.hm(h),
+      regRows: hours.map((h, idx) => ({
+        timeStart: this.hm(h),
+        timeEnd: this.hm(h + 1),
+        isLast: idx === hours.length - 1,
+        labelColStyle: {
+          width: '46px',
+          flex: 'none',
+          position: 'relative'
+        },
+        timeTopStyle: {
+          position: 'absolute',
+          top: '-1px',
+          transform: 'translateY(-50%)',
+          right: '6px',
+          fontSize: '11px',
+          fontWeight: '500',
+          fontFeatureSettings: "'tnum'",
+          color: 'var(--color-neutral-600)',
+          lineHeight: 1,
+          pointerEvents: 'none'
+        },
+        timeBottomStyle: {
+          position: 'absolute',
+          bottom: '-2px',
+          transform: 'translateY(50%)',
+          right: '6px',
+          fontSize: '11px',
+          fontWeight: '500',
+          fontFeatureSettings: "'tnum'",
+          color: 'var(--color-neutral-600)',
+          lineHeight: 1,
+          pointerEvents: 'none'
+        },
         cells: dayMeta.map(dm => {
           const on = this.hoursOf(S.who, dm.date.getDay()).includes(h);
           return {
@@ -957,8 +1092,46 @@ class Component extends DCLogic {
         this.setState({ note: '', pinInput: '', drawerOpen: false, sel: null, verified: [...S.verified, S.who] });
       },
       myOverrides: myOv, hasMyOverrides: myOv.length > 0,
-      dayTabs: dayMeta.map((dm, i) => ({ label: dm.dow + ' ' + dm.md, style: mChip(i === Math.min(S.matrixDay, dayMeta.length - 1)), pick: () => this.setState({ matrixDay: i }) })),
-      matrixMembers: this.scope.map(m => ({ name: this.nameOf(m) })), matrixRows
+      dayTabs: dayMeta.map((dm, i) => {
+        const active = i === Math.min(S.matrixDay, dayMeta.length - 1);
+        return {
+          label: dm.dow + ' ' + dm.md,
+          today: dm.today,
+          style: {
+            cursor: 'pointer',
+            font: 'inherit',
+            fontSize: '13px',
+            fontWeight: active ? '600' : '500',
+            padding: '6px 14px',
+            borderRadius: 'var(--radius-full)',
+            background: active ? 'var(--color-accent-700)' : 'var(--color-surface)',
+            color: active ? '#ffffff' : 'var(--color-neutral-700)',
+            border: '1px solid ' + (active ? 'var(--color-accent-700)' : 'var(--color-divider)'),
+            boxShadow: active ? '0 2px 6px rgba(5,150,105,0.25)' : 'none',
+            whiteSpace: 'nowrap',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            transition: 'all .15s ease'
+          },
+          pick: () => this.setState({ matrixDay: i })
+        };
+      }),
+      matrixStyle: {
+        width: 'min(980px, 96vw)',
+        maxHeight: '90vh',
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-divider)',
+        borderRadius: 'var(--radius-xl)',
+        padding: 'var(--space-4) var(--space-6)',
+        boxShadow: 'var(--shadow-lg)'
+      },
+      matrixSubtitle,
+      copyMatrixDay,
+      matrixMembers,
+      matrixRows
     };
   }
 }
